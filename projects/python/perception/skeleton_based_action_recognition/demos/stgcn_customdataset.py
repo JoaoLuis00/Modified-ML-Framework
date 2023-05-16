@@ -32,7 +32,7 @@ def main():
         val_batch_size=3,
         batch_size=4,
         lr=0.01,
-        epochs=300,
+        epochs=250,
     )
 
     # Define datasets path
