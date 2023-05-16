@@ -19,20 +19,20 @@ def main():
         # batch_size=args.batch_size,
         # backbone=args.backbone,
         num_workers=8,
-        num_person=1,
-        num_frames=150,
-        num_subframes=50,
+        num_frames=300,
         num_point=46,
         experiment_name="stgcn_custom",
         dataset_name="custom",
-        num_class=5,
+        num_class=3,
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=3,
-        batch_size=4,
-        lr=0.01,
-        epochs=300,
+        batch_size=13,
+        epochs=30,
+        in_channels=3,
+        num_person=1,
+        lr=0.1
     )
 
     # Define datasets path

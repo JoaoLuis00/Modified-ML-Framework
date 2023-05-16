@@ -14,17 +14,14 @@ def main():
     learner = CoSTGCNLearner(
         device='cpu',
         temp_path=str(tmp_path),
-        batch_size=1,
+        batch_size=6,
         backbone='costgcn',
-        num_workers=0,
+        num_workers=8,
         graph_type='custom',
         num_point=46,
-        num_person=1,
-        num_classes=5,
-        sequence_len=150,
+        num_classes=3,
+        sequence_len=300,
         iters=250,
-        lr=0.1,
-        weight_decay=0.0001
     )
 
     # Define datasets
