@@ -19,8 +19,8 @@ def main():
         num_workers=8,
         graph_type='custom',
         num_point=46,
-        num_classes=3,
-        sequence_len=300,
+        num_classes=5,
+        sequence_len=150,
         iters=250,
     )
 
@@ -55,6 +55,12 @@ def main():
     # results = learner.eval(val_ds)
     # print("Evaluation results: ", results)
 
+    learner.optimize(do_constant_folding=True)
+    
+    save_path = Path(__file__).parent/'models'
+    
+    learner.save(path=str(save_path))
+    
 #test commment to git source control
 
 if __name__ == "__main__":

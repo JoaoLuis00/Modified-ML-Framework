@@ -117,8 +117,6 @@ class SpatioTemporalGCNLearner(Learner):
         elif self.dataset_name == 'custom':
             self.classes_dict = CUSTOM_CLASSES
             self.num_point = 46
-            self.num_frames = 75
-            self.num_person = 1
             
     def fit(self, dataset, val_dataset, logging_path='', silent=False, verbose=True,
             momentum=0.9, nesterov=True, weight_decay=0.0001, train_data_filename='train_joints.npy',
@@ -455,7 +453,7 @@ class SpatioTemporalGCNLearner(Learner):
             data_path = os.path.join(dataset.path, data_filename)
             labels_path = os.path.join(dataset.path, labels_filename)
             if phase == 'train':
-                if dataset.dataset_type.lower() == "nturgbd" or self.method_name == 'tagcn':
+                if dataset.dataset_type.lower() == "nturgbd" or self.method_name == 'tagcn' or dataset.dataset_type.lower() == 'custom':
                     random_choose = False
                     random_move = False
                     window_size = -1
@@ -463,10 +461,6 @@ class SpatioTemporalGCNLearner(Learner):
                     random_choose = True
                     random_move = True
                     window_size = 150
-                elif dataset.dataset_type.lower() == 'custom':
-                    random_choose = False
-                    random_move = False
-                    window_size = -1
             else:
                 random_choose = False
                 random_move = False

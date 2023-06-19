@@ -45,6 +45,7 @@ from opendr.perception.skeleton_based_action_recognition.algorithm.models.pstgcn
 from opendr.perception.skeleton_based_action_recognition.algorithm.datasets.feeder import Feeder
 from opendr.perception.skeleton_based_action_recognition.algorithm.datasets.ntu_gendata import NTU60_CLASSES
 from opendr.perception.skeleton_based_action_recognition.algorithm.datasets.kinetics_gendata import KINETICS400_CLASSES
+from opendr.perception.skeleton_based_action_recognition.algorithm.datasets.custom_gendata import CUSTOM_CLASSES
 
 
 class ProgressiveSpatioTemporalGCNLearner(Learner):
@@ -107,6 +108,8 @@ class ProgressiveSpatioTemporalGCNLearner(Learner):
             self.classes_dict = NTU60_CLASSES
         elif self.dataset_name == 'kinetics':
             self.classes_dict = KINETICS400_CLASSES
+        elif self.dataset_name == 'custom':
+            self.classes_dict = CUSTOM_CLASSES
 
     def fit(self, dataset, val_dataset, logging_path='', silent=False, verbose=True,
             momentum=0.9, nesterov=True, weight_decay=0.0001, train_data_filename='train_joints.npy',
@@ -422,7 +425,7 @@ class ProgressiveSpatioTemporalGCNLearner(Learner):
         :rtype: Feeder class object or DatasetIterator class object
         """
         if isinstance(dataset, ExternalDataset):
-            if dataset.dataset_type.lower() != "nturgbd" and dataset.dataset_type.lower() != "kinetics":
+            if dataset.dataset_type.lower() != "nturgbd" and dataset.dataset_type.lower() != "kinetics" and dataset.dataset_type.lower() != 'custom':
                 raise UserWarning("dataset_type must be \"NTURGBD or Kinetics\"")
             # Get data and labels path
             data_path = os.path.join(dataset.path, data_filename)
@@ -436,6 +439,10 @@ class ProgressiveSpatioTemporalGCNLearner(Learner):
                     random_choose = True
                     random_move = True
                     window_size = 150
+                elif dataset.dataset_type.lower() == 'custom':
+                    random_choose = False
+                    random_move = False
+                    window_size = -1    
             else:
                 random_choose = False
                 random_move = False

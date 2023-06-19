@@ -9,6 +9,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 from opendr.perception.skeleton_based_action_recognition.algorithm.graphs.nturgbd import NTUGraph
 from opendr.perception.skeleton_based_action_recognition.algorithm.graphs.kinetics import KineticsGraph
+from opendr.perception.skeleton_based_action_recognition.algorithm.graphs.custom_graph import CustomGraph
 
 
 def weights_init(module_, bs=1):
@@ -148,6 +149,8 @@ class TAGCN(nn.Module):
             self.graph = NTUGraph()
         elif graph_type == 'openpose' or num_point == 18:
             self.graph = KineticsGraph()
+        elif graph_type == 'custom' or num_point == 46:
+            self.graph = CustomGraph() 
 
         A = self.graph.A
         self.data_bn = nn.BatchNorm1d(num_person * in_channels * num_point)
