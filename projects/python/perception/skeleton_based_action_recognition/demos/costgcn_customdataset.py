@@ -19,9 +19,10 @@ def main():
         num_workers=8,
         graph_type='custom',
         num_point=46,
-        num_classes=5,
-        sequence_len=150,
+        num_classes=4,
+        sequence_len=300,
         iters=250,
+        
     )
 
     # Define datasets

@@ -14,25 +14,23 @@ def main():
 
     # Define learner
     learner = ProgressiveSpatioTemporalGCNLearner(
-        # device=args.device,
-        temp_path=str(tmp_path),
-        # batch_size=args.batch_size,
-        # backbone=args.backbone,
-        num_workers=8,
-        num_frames=150,
-        num_point=46,
-        experiment_name="pstgcn_custom",
-        dataset_name="custom",
-        num_class=5,
-        graph_type="custom",
-        device="cpu",
+        temp_path="./parent_dir",
+        batch_size=64,
+        epochs=65,
         checkpoint_after_iter=10,
-        val_batch_size=3,
-        batch_size=13,
-        epochs=30,
-        in_channels=5,
-        num_person=1,
-        lr=0.1,
+        val_batch_size=128,
+        dataset_name="custom",
+        experiment_name="pstgcn_custom",
+        blocksize=20,
+        numblocks=1,
+        numlayers=1,
+        topology=[],
+        layer_threshold=1e-4,
+        block_threshold=1e-4,
+        graph_type='custom',
+        num_class=4,
+        num_point=46,
+        
     )
 
     # Define datasets path
@@ -45,7 +43,7 @@ def main():
 
     val_ds = ExternalDataset(path=str(val_ds_path), dataset_type="custom")
 
-    learner.fit(
+    learner.network_builder(
         dataset=train_ds,
         val_dataset=val_ds,
         train_data_filename="train_joints.npy",
@@ -59,10 +57,11 @@ def main():
     # print("Evaluation results: ", results)
 
     learner.optimize(do_constant_folding=True)
-    
-    save_path = Path(__file__).parent/'models'
-    
-    learner.save(path=str(save_path),model_name='pstgcn_optimized')
+
+    save_path = Path(__file__).parent / "models"
+
+    learner.save(path=str(save_path), model_name="pstgcn_optimized")
+
 
 if __name__ == "__main__":
     main()

@@ -19,11 +19,11 @@ def main():
         # batch_size=args.batch_size,
         # backbone=args.backbone,
         num_workers=8,
-        num_frames=150,
+        num_frames=300,
         num_point=46,
         experiment_name="tagcn_custom",
         dataset_name="custom",
-        num_class=5,
+        num_class=4,
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
@@ -33,7 +33,9 @@ def main():
         in_channels=3,
         num_person=1,
         lr=0.1,
-        method_name='tagcn'
+        method_name='tagcn',
+        num_subframes=150,
+    
     )
 
     # Define datasets path
