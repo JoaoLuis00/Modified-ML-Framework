@@ -32,7 +32,7 @@ def main():
         epochs=3,
         in_channels=3,
         num_person=1,
-        lr=0.05,
+        lr=1,
         method_name='tagcn',
         num_subframes=100,
     )
