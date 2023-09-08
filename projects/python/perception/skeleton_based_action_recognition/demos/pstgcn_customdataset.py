@@ -1,5 +1,5 @@
 import torch
-
+import os
 from opendr.perception.skeleton_based_action_recognition.progressive_spatio_temporal_gcn_learner import (
     ProgressiveSpatioTemporalGCNLearner,
     _MODEL_NAMES,
@@ -14,11 +14,11 @@ def main():
 
     # Define learner
     learner = ProgressiveSpatioTemporalGCNLearner(
-        temp_path="./parent_dir",
-        batch_size=64,
-        epochs=65,
+        temp_path=str(tmp_path),
+        batch_size=15,
+        epochs=40,
         checkpoint_after_iter=10,
-        val_batch_size=128,
+        val_batch_size=5,
         dataset_name="custom",
         experiment_name="pstgcn_custom",
         blocksize=20,
@@ -28,14 +28,19 @@ def main():
         layer_threshold=1e-4,
         block_threshold=1e-4,
         graph_type='custom',
-        num_class=4,
+        num_class=5,
         num_point=46,
+        in_channels=3
         
     )
 
+    folder_path = Path(__file__).parent/'statistics'/learner.experiment_name
+
+    if not os.path.isdir(folder_path):
+        os.mkdir(folder_path)
+    
     # Define datasets path
     data_path = tmp_path / "data"
-
     train_ds_path = data_path / "custom"
     val_ds_path = data_path / "custom"
 
@@ -53,15 +58,17 @@ def main():
         skeleton_data_type="joint",
     )
 
-    # results = learner.eval(val_ds)
+    results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt') )
     # print("Evaluation results: ", results)
+    with open(os.path.join(folder_path, f'{learner.experiment_name}.txt'), 'w') as f:
+        f.write(str(ret))
+        f.write(str(results))
 
     learner.optimize(do_constant_folding=True)
-
-    save_path = Path(__file__).parent / "models"
-
-    learner.save(path=str(save_path), model_name="pstgcn_optimized")
-
+    
+    save_path = Path(__file__).parent/'models'
+    
+    learner.save(path=str(save_path),model_name=f'{learner.experiment_name}_optimized')
 
 if __name__ == "__main__":
     main()
