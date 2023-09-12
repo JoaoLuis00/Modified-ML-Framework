@@ -21,7 +21,7 @@ def main():
         num_workers=8,
         num_frames=300,
         num_point=46,
-        experiment_name="tagcn_custom_test",
+        experiment_name="tagcn_64and16_120epochs_0.15lr_75subframes",
         dataset_name="custom",
         num_class=5,
         graph_type="custom",
@@ -29,12 +29,14 @@ def main():
         checkpoint_after_iter=10,
         val_batch_size=32, #7
         batch_size=32, #10
-        epochs=3,
+        epochs=120,
         in_channels=3,
         num_person=1,
-        lr=1,
+        lr=0.15,
         method_name='tagcn',
-        num_subframes=100,
+        num_subframes=75,
+        #checkpoint_load_iter=200,
+        #start_epoch=145
     )
 
     folder_path = Path(__file__).parent/'statistics'/learner.experiment_name
@@ -43,9 +45,9 @@ def main():
         os.mkdir(folder_path)
     
     # Define datasets path
-    data_path = tmp_path / "data"
-    train_ds_path = data_path / "custom"
-    val_ds_path = data_path / "custom"
+    data_path = tmp_path / "pkl_files"
+    train_ds_path = data_path
+    val_ds_path = data_path
 
     train_ds = ExternalDataset(path=str(train_ds_path), dataset_type="custom")
 

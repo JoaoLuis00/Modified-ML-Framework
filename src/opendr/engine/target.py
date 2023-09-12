@@ -22,7 +22,6 @@ class BaseTarget(ABC):
     Root BaseTarget abstract class has been created to allow for setting the hierarchy of different targets.
     Classes that inherit from BaseTarget can be used either as outputs of an algorithm or as ground
     truth annotations, but there is no guarantee that this is always possible, i.e. that both options are possible.
-
     Classes that are only used either for ground truth annotations or algorithm outputs must inherit this class.
     """
 
@@ -102,6 +101,77 @@ class Target(BaseTarget):
         self._action = action
 
 
+class MPTarget(BaseTarget):
+    """
+    Classes inheriting from the Target class always guarantee that they can be used for both cases, outputs and
+    ground truth annotations.
+    Therefore, classes that are only used to provide ground truth annotations
+    must inherit from BaseTarget instead of Target. To allow representing different types of
+    targets, this class serves as the basis for the more specialized forms of targets.
+    All the classes should implement the corresponding setter/getter functions to ensure that the necessary
+    type checking is performed (if there is no other technical obstacle to this, e.g., negative performance impact).
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._data = None
+        self._confidence = None
+        self._action = None
+
+    @property
+    def data(self):
+        """
+        Getter of data field.
+        This returns the internal representation of the data.
+        :return: the actual data held by the object
+        :rtype: varies according to the actual concrete implementation
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        """
+        Setter for data. This will perform the necessary type checking (if needed).
+        :param: data to be assigned to the object
+        """
+        self._data = data
+
+    @property
+    def confidence(self):
+        """
+        Getter of confidence field.
+        This returns the confidence for the current target.
+        :return: the confidence held by the object
+        :rtype: float
+        """
+        return self._confidence
+
+    @confidence.setter
+    def confidence(self, confidence):
+        """
+        Setter for the confidence field. This can be used to perform the necessary type checking (if needed).
+        :param: confidence to be used for assigning confidence to this object
+        """
+        self._confidence = confidence
+
+    @property
+    def action(self):
+        """
+        Getter of action field.
+        This returns the selected/expected action.
+        :return: the action data held by the object
+        :rtype: Action
+        """
+        return self._action
+
+    @action.setter
+    def action(self, action):
+        """
+        Setter for action. This will perform the necessary type checking (if needed).
+        :param: action to be assigned to the object
+        """
+        self._action = action
+
 class Category(Target):
     """
     The Category target is used for 1-of-K classification problems.
@@ -111,7 +181,6 @@ class Category(Target):
 
     def __init__(self, prediction: int, description=None, confidence=None):
         """Initialize a category.
-
         Args:
             prediction (int): Class integer
             description (optional):
@@ -156,7 +225,6 @@ class Category(Target):
     def data(self):
         """
         Getter of data.
-
         :return: the actual category held by the object
         :rtype: int
         """
@@ -230,6 +298,53 @@ class Keypoint(Target):
         return self.data[1]
 
 
+class MPKeypoint(MPTarget):
+    """
+    This target is used for keypoint detection in pose estimation, body part detection, etc.
+    A MPkeypoint is a list with three coordinates [x, y, z], which gives the x, y, z position of the
+    keypoints on the image in relation with the pose estimator MediaPipe.
+    """
+
+    def __init__(self, keypoint, confidence=None):
+        super().__init__()
+        self.data = keypoint
+        self.confidence = confidence
+
+    def __str__(self):
+        return str(self.data)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key != 0 and key != 1 and key != 2:
+                raise ValueError('Keypoint contains 3 ' + str(Pose.num_kpts) + ' data points. Index ' + str(
+                    key) + ' is not within the supported range [0, 1, 2].')
+            else:
+                return self.data[key]
+        elif isinstance(key, str):
+            if key == 'x':
+                return self.data[0]
+            elif key == 'y':
+                return self.data[1]
+            elif key == 'z':
+                return self.data[2]
+            else:
+                raise ValueError('Only \'x\', \'y\' and \'z\' keys are supported, ' + key + ' is not supported.')
+        else:
+            raise ValueError('Only string and integers are supported for retrieving data points of keypoint.')
+
+    @property
+    def x(self):
+        return self.data[0]
+
+    @property
+    def y(self):
+        return self.data[1]
+    
+    @property
+    def z(self):
+        return self.data[2]
+
+
 class Pose(Target):
     """
     This target is used for pose estimation. It contains a list of Keypoints.
@@ -253,7 +368,6 @@ class Pose(Target):
     def id(self):
         """
         Getter of human id.
-
         :return: the actual human id held by the object
         :rtype: int
         """
@@ -275,7 +389,6 @@ class Pose(Target):
     def data(self):
         """
         Getter of data.
-
         :return: the actual pose data held by the object
         :rtype: numpy.ndarray
         """
@@ -299,6 +412,108 @@ class Pose(Target):
         """
         Returns pose in a human-readable format, that contains the pose ID, detection confidence and
         the matched kpt_names and keypoints x,y position.
+        """
+
+        out_string = "Pose ID: " + str(self.id)
+        out_string += "\nDetection confidence: " + str(self.confidence) + "\nKeypoints name-position:\n"
+        # noinspection PyUnresolvedReferences
+        for name, kpt in zip(Pose.kpt_names, self.data.tolist()):
+            out_string += name + ": " + str(kpt) + "\n"
+        return out_string
+
+    def __getitem__(self, key):
+        """  Allows for accessing keypoint position using either integers or keypoint names """
+        if isinstance(key, int):
+            if key >= Pose.num_kpts or key < 0:
+                raise ValueError('Pose supports ' + str(Pose.num_kpts) + ' keypoints. Keypoint id ' + str(
+                    key) + ' is not within the supported range.')
+            else:
+                return self.data[key]
+        elif isinstance(key, str):
+            try:
+                position = Pose.kpt_names.index(key)
+                return self.data[position]
+            except:
+                raise ValueError('Keypoint ' + key + ' not supported.')
+        else:
+            raise ValueError('Only string and integers are supported for retrieving keypoints.')    
+        
+
+class MPPose(MPTarget):
+    """
+    This target is used for pose estimation. It contains a list of Keypoints.
+    Refer to kpt_names for keypoint naming. Adapted to support hands and a custom number of keypoints
+    """
+    num_kpts = 46
+    kpt_names = ['l_sho', 'r_sho','l_elb', 'r_elb',
+                 #left hand
+                 'l_wri', 'l_thucmc', 'l_thumcp', 'l_thuip', 'l_thutip',
+                 'l_indmcp', 'l_indpip', 'l_inddip', 'l_indtip',
+                 'l_midmcp', 'l_midpip', 'l_middip', 'l_midtip',
+                 'l_rngmcp', 'l_rngpip', 'l_rngdip', 'l_rngtip',
+                 'l_pnkmcp', 'l_pnkpip', 'l_pnkdip', 'l_pnktip',
+                 #right hand 
+                 'r_wri', 'r_thucmc', 'r_thumcp', 'r_thuip', 'r_thutip',
+                 'r_indmcp', 'r_indpip', 'r_inddip', 'r_indtip',
+                 'r_midmcp', 'r_midpip', 'r_middip', 'r_midtip',
+                 'r_rngmcp', 'r_rngpip', 'r_rngdip', 'r_rngtip',
+                 'r_pnkmcp', 'r_pnkpip', 'r_pnkdip', 'r_pnktip',]
+    last_id = -1
+
+    def __init__(self, keypoints, confidence):
+        super().__init__()
+        self.data = keypoints
+        self.confidence = confidence
+        self._id = None
+
+    @property
+    def id(self):
+        """
+        Getter of human id.
+        :return: the actual human id held by the object
+        :rtype: int
+        """
+        return self._id
+
+    @id.setter
+    def id(self, id):
+        """
+        Setter for human id to which the Pose corresponds to. Pose expects id to be of int type.
+        Please note that None is a valid value, since a pose is not always accompanied with an id.
+        :param: human id to which the Pose corresponds to
+        """
+        if isinstance(id, int) or id is None:
+            self._id = id
+        else:
+            raise ValueError("Pose id should be an integer or None")
+
+    @property
+    def data(self):
+        """
+        Getter of data.
+        :return: the actual pose data held by the object
+        :rtype: numpy.ndarray
+        """
+        if self._data is None:
+            raise ValueError("Pose object is empty")
+
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        """
+        Setter for data. Pose expects a NumPy array or a list
+        :param: data to be used for creating Pose
+        """
+        if isinstance(data, np.ndarray) or isinstance(data, list):
+            self._data = data
+        else:
+            raise ValueError("Pose expects either NumPy arrays or lists as data")
+
+    def __str__(self):
+        """
+        Returns pose in a human-readable format, that contains the pose ID, detection confidence and
+        the matched kpt_names and keypoints x,y,z position.
         """
 
         out_string = "Pose ID: " + str(self.id)
@@ -1055,7 +1270,6 @@ class TrackingAnnotation3DList(Target):
 class Heatmap(Target):
     """
     This target is used for multi-class segmentation problems or multi-class problems that require heatmap annotations.
-
     The data has to be a NumPy array.
     The attribute 'class_names' can be used to store a mapping from the numerical labels to string representations.
     """
