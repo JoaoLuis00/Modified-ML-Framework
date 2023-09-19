@@ -311,7 +311,7 @@ if __name__ == '__main__':
     pose_landmarker_base_options = python.BaseOptions(model_asset_path='pose_landmarker.task')
     hand_landmarker_base_options = python.BaseOptions(model_asset_path='hand_landmarker.task')
 
-    #! TEST FOR LIVESTREAM IF NOT IMPLEMENT FOR SINGLE IMAGES
+    #! TEST FOR LIVESTREAM, IF NOT, IMPLEMENT FOR SINGLE IMAGES
     PoseLandmarkerOptions = vision.PoseLandmarkerOptions(
                             base_options=pose_landmarker_base_options,
                             running_mode=VisionRunningMode.VIDEO,
