@@ -116,7 +116,6 @@ class SpatioTemporalGCNLearner(Learner):
             self.classes_dict = KINETICS400_CLASSES
         elif self.dataset_name == 'custom':
             self.classes_dict = CUSTOM_CLASSES
-            self.num_point = 46
             
     def fit(self, dataset, val_dataset, logging_path='', silent=False, verbose=True,
             momentum=0.9, nesterov=True, weight_decay=0.0001, train_data_filename='train_joints.npy',
