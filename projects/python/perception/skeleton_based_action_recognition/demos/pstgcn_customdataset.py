@@ -8,13 +8,13 @@ from opendr.perception.skeleton_based_action_recognition.progressive_spatio_temp
 from opendr.engine.datasets import ExternalDataset
 from pathlib import Path
 
+KEYPOINTS = 24
 
 def main():
     tmp_path = Path(__file__).parent / "tmp"
 
     # Define learner
     learner = ProgressiveSpatioTemporalGCNLearner(
-        temp_path=str(tmp_path),
         batch_size=15,
         epochs=40,
         checkpoint_after_iter=10,
@@ -29,26 +29,26 @@ def main():
         block_threshold=1e-4,
         graph_type='custom',
         num_class=5,
-        num_point=46,
-        in_channels=3
-        
+        num_point=KEYPOINTS,
+        in_channels=3,
+        tmp_path = Path(__file__).parent/'models'/learner.experiment_name/'model'
     )
 
-    folder_path = Path(__file__).parent/'statistics'/learner.experiment_name
+    folder_path = Path(__file__).parent/'models'/learner.experiment_name
 
     if not os.path.isdir(folder_path):
         os.mkdir(folder_path)
     
     # Define datasets path
-    data_path = tmp_path / "data"
-    train_ds_path = data_path / "custom"
-    val_ds_path = data_path / "custom"
+    data_path = Path(__file__).parent / "data" / "pkl_files"
+    train_ds_path = data_path
+    val_ds_path = data_path
 
     train_ds = ExternalDataset(path=str(train_ds_path), dataset_type="custom")
 
     val_ds = ExternalDataset(path=str(val_ds_path), dataset_type="custom")
 
-    learner.network_builder(
+    ret = learner.network_builder(
         dataset=train_ds,
         val_dataset=val_ds,
         train_data_filename="train_joints.npy",
@@ -66,9 +66,12 @@ def main():
 
     learner.optimize(do_constant_folding=True)
     
-    save_path = Path(__file__).parent/'models'
+    save_model_path = folder_path/'model'
     
-    learner.save(path=str(save_path),model_name=f'{learner.experiment_name}_optimized')
+    if not os.path.isdir(save_model_path):
+        os.mkdir(save_model_path)
+    
+    learner.save(path=str(save_model_path),model_name=f'{learner.experiment_name}')
 
 if __name__ == "__main__":
     main()

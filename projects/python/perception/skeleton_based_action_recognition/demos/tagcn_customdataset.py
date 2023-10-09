@@ -8,19 +8,18 @@ from opendr.perception.skeleton_based_action_recognition.continual_stgcn_learner
 from opendr.engine.datasets import ExternalDataset
 from pathlib import Path
 
+KEYPOINTS = 24
 
 def main():
-    tmp_path = Path(__file__).parent / "tmp"
 
     # Define learner
     learner = SpatioTemporalGCNLearner(
         # device=args.device,
-        temp_path=str(tmp_path),
         # batch_size=args.batch_size,
         # backbone=args.backbone,
         num_workers=8,
         num_frames=300,
-        num_point=46,
+        num_point=KEYPOINTS,
         experiment_name="tagcn_64and16_120epochs_0.15lr_75subframes",
         dataset_name="custom",
         num_class=5,
@@ -35,17 +34,18 @@ def main():
         lr=0.15,
         method_name='tagcn',
         num_subframes=75,
+        tmp_path = Path(__file__).parent/'models'/learner.experiment_name/'model',
         #checkpoint_load_iter=200,
         #start_epoch=145
     )
 
-    folder_path = Path(__file__).parent/'statistics'/learner.experiment_name
+    folder_path = Path(__file__).parent/'models'/learner.experiment_name
 
     if not os.path.isdir(folder_path):
         os.mkdir(folder_path)
     
     # Define datasets path
-    data_path = tmp_path / "pkl_files"
+    data_path = Path(__file__).parent / "data" / "pkl_files"
     train_ds_path = data_path
     val_ds_path = data_path
 
@@ -72,9 +72,12 @@ def main():
 
     learner.optimize(do_constant_folding=True)
     
-    save_path = Path(__file__).parent/'models'
+    save_model_path = folder_path/'model'
     
-    learner.save(path=str(save_path),model_name=f'{learner.experiment_name}_optimized')
+    if not os.path.isdir(save_model_path):
+        os.mkdir(save_model_path)
+    
+    learner.save(path=str(save_model_path),model_name=f'{learner.experiment_name}')
     
 
 if __name__ == "__main__":
