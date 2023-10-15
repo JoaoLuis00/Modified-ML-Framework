@@ -10,17 +10,19 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
+experiment_name = "pstgcn_custom"
+
 def main():
     tmp_path = Path(__file__).parent / "tmp"
 
     # Define learner
     learner = ProgressiveSpatioTemporalGCNLearner(
         batch_size=15,
-        epochs=40,
+        epochs=50,
         checkpoint_after_iter=10,
         val_batch_size=5,
         dataset_name="custom",
-        experiment_name="pstgcn_custom",
+        experiment_name=experiment_name,
         blocksize=20,
         numblocks=1,
         numlayers=1,

@@ -10,6 +10,12 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
+epochs = 70
+lr = 0.15
+subframes = 75
+
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch32"
+tmp_path = Path(__file__).parent / "models" / str(experiment_name) / "model"
 def main():
 
     # Define learner
@@ -20,26 +26,27 @@ def main():
         num_workers=8,
         num_frames=300,
         num_point=KEYPOINTS,
-        experiment_name="tagcn_64and16_120epochs_0.15lr_75subframes",
         dataset_name="custom",
-        num_class=5,
+        num_class=6,
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
-        val_batch_size=32, #7
-        batch_size=32, #10
-        epochs=120,
+        val_batch_size=32, 
+        batch_size=32, 
+        epochs=epochs,
         in_channels=3,
         num_person=1,
-        lr=0.15,
+        lr=lr,
         method_name='tagcn',
-        num_subframes=75,
-        tmp_path = Path(__file__).parent/'models'/learner.experiment_name/'model',
+        num_subframes=subframes,
+        experiment_name=experiment_name,
+        temp_path = str(tmp_path),
+        drop_after_epoch=[30,40]
         #checkpoint_load_iter=200,
         #start_epoch=145
     )
 
-    folder_path = Path(__file__).parent/'models'/learner.experiment_name
+    folder_path = Path(__file__).parent/'models'/str(learner.experiment_name)
 
     if not os.path.isdir(folder_path):
         os.mkdir(folder_path)
@@ -61,10 +68,10 @@ def main():
         val_data_filename="val_joints.npy",
         val_labels_filename="val_labels.pkl",
         skeleton_data_type="joint",
-        #logging_path=f'{Path(__file__).parent}/statistics/{learner.experiment_name}'
+        logging_path=str(folder_path)
     )
     
-    results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt') )
+    results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt'),wrong_file=os.path.join(folder_path,'wrong.txt') )
     # print("Evaluation results: ", results)
     with open(os.path.join(folder_path, f'{learner.experiment_name}.txt'), 'w') as f:
         f.write(str(ret))

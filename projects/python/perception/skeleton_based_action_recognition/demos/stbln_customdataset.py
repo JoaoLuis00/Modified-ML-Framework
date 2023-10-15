@@ -10,8 +10,14 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
+epochs = 50
+lr = 0.1
+subframes = 100
+
+experiment_name = f"stbln_{epochs}epochs_{lr}lr"
+tmp_path = Path(__file__).parent / "models" / str(experiment_name) / "model"
+
 def main():
-    tmp_path = Path(__file__).parent / "tmp"
 
     # Define learner
     learner = SpatioTemporalGCNLearner(
@@ -21,24 +27,24 @@ def main():
         num_workers=8,
         num_frames=300,
         num_point=KEYPOINTS,
-        experiment_name="stbln_150epochs_0.15lr",
+        experiment_name=experiment_name,
         dataset_name="custom",
-        num_class=5,
+        num_class=6,
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
-        val_batch_size=128,
-        batch_size=32,
-        epochs=150,
+        val_batch_size=32,
+        batch_size=64,
+        epochs=epochs,
         in_channels=3,
         num_person=1,
-        lr=0.1,
+        lr=lr,
         method_name='stbln',
         stbln_symmetric=False,
-        tmp_path = Path(__file__).parent/'models'/learner.experiment_name/'model'
+        temp_path = str(tmp_path)
     )
     
-    folder_path = Path(__file__).parent/'models'/learner.experiment_name
+    folder_path = Path(__file__).parent/'models'/str(learner.experiment_name)
 
     if not os.path.isdir(folder_path):
         os.mkdir(folder_path)
@@ -63,7 +69,7 @@ def main():
         #logging_path=str(folder_path)
     )
     
-    results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt') )
+    results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt'),wrong_file=os.path.join(folder_path,'wrong.txt'))
     # print("Evaluation results: ", results)
     with open(os.path.join(folder_path, f'{learner.experiment_name}.txt'), 'w') as f:
         f.write(str(ret))

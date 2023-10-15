@@ -1,0 +1,7 @@
+train_loss
+eval_results
+best_accuracy
+model_nameepoch
+accuracy
+loss
+score
