@@ -16,7 +16,7 @@ subframes = 75
 
 datatype = 'with_multi_requests'
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3050_batch128"
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch304060_batch128"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
@@ -49,7 +49,7 @@ def main():
         num_subframes=subframes,
         experiment_name=experiment_name,
         temp_path = str(tmp_path),
-        drop_after_epoch=[30,50]
+        drop_after_epoch=[30,40,60]
     )
 
     folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)
