@@ -10,7 +10,7 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-epochs = 150
+epochs = 70
 lr = 0.1
 subframes = 75
 
