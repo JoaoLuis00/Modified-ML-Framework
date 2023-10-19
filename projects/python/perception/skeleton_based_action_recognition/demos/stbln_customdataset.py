@@ -10,12 +10,14 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-epochs = 50
+epochs = 70
 lr = 0.1
 subframes = 100
 
-experiment_name = f"stbln_{epochs}epochs_{lr}lr"
-tmp_path = Path(__file__).parent / "models" / str(experiment_name) / "model"
+datatype = 'with_multi_requests'
+
+experiment_name = f"stbln_{epochs}epochs_{lr}lr_dropafterepoch5060_batch128"
+tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
 def main():
 
@@ -34,17 +36,18 @@ def main():
         device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=32,
-        batch_size=64,
+        batch_size=128,
         epochs=epochs,
         in_channels=3,
         num_person=1,
         lr=lr,
         method_name='stbln',
         stbln_symmetric=False,
-        temp_path = str(tmp_path)
+        temp_path = str(tmp_path),
+        drop_after_epoch=[50,60]
     )
     
-    folder_path = Path(__file__).parent/'models'/str(learner.experiment_name)
+    folder_path = Path(__file__).parent/'models'/ str(datatype) /str(learner.experiment_name)
 
     if not os.path.isdir(folder_path):
         os.mkdir(folder_path)
@@ -66,7 +69,7 @@ def main():
         val_data_filename="val_joints.npy",
         val_labels_filename="val_labels.pkl",
         skeleton_data_type="joint",
-        #logging_path=str(folder_path)
+        logging_path=str(folder_path)
     )
     
     results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt'),wrong_file=os.path.join(folder_path,'wrong.txt'))

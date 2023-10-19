@@ -11,11 +11,19 @@ from pathlib import Path
 KEYPOINTS = 24
 
 epochs = 70
-lr = 0.15
+lr = 0.1
 subframes = 75
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch32"
-tmp_path = Path(__file__).parent / "models" / str(experiment_name) / "model"
+datatype = 'with_multi_requests'
+
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3050_batch128"
+#experiment_name = f"test"
+tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
+
+# TENTAR COM OUTROS VALORES DE DROP E MUDAR PARA O DATA_TYPE COM OS REQUESTS SO PARA A FRENTE
+# AUMENTAR UM POUCO MAIS AS EPOCHS E EXPERIMENTAR COM OS MERDAS DOS DROPS
+# should try to mess with lr=0.15 subframes=100 drop=[50,70,90]/[50,70,90,110] ou qualquer coisa assim e ir vendo e avaliando a loss
+
 def main():
 
     # Define learner
@@ -31,8 +39,8 @@ def main():
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
-        val_batch_size=32, 
-        batch_size=32, 
+        val_batch_size=64, 
+        batch_size=128, 
         epochs=epochs,
         in_channels=3,
         num_person=1,
@@ -41,18 +49,16 @@ def main():
         num_subframes=subframes,
         experiment_name=experiment_name,
         temp_path = str(tmp_path),
-        drop_after_epoch=[30,40]
-        #checkpoint_load_iter=200,
-        #start_epoch=145
+        drop_after_epoch=[30,50]
     )
 
-    folder_path = Path(__file__).parent/'models'/str(learner.experiment_name)
+    folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)
 
     if not os.path.isdir(folder_path):
         os.mkdir(folder_path)
     
     # Define datasets path
-    data_path = Path(__file__).parent / "data" / "pkl_files"
+    data_path = Path(__file__).parent / "data" / str(datatype)
     train_ds_path = data_path
     val_ds_path = data_path
 
