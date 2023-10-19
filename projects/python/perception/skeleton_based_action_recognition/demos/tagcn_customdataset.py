@@ -10,13 +10,13 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-epochs = 70
+epochs = 150
 lr = 0.1
 subframes = 75
 
-datatype = 'with_multi_requests'
+datatype = 'only_front_requests'
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch304060_batch128"
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch128"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
@@ -49,7 +49,7 @@ def main():
         num_subframes=subframes,
         experiment_name=experiment_name,
         temp_path = str(tmp_path),
-        drop_after_epoch=[30,40,60]
+        drop_after_epoch=[30,40]
     )
 
     folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)

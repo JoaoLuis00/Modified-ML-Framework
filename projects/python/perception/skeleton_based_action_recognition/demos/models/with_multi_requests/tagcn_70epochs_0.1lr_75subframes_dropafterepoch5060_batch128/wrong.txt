@@ -1,8 +1,0 @@
-tensor(1),2,5
-tensor(14),1,0
-tensor(15),1,0
-tensor(20),2,1
-tensor(26),0,1
-tensor(27),2,1
-tensor(31),3,4
-tensor(34),4,3
