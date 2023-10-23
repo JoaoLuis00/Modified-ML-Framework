@@ -1,0 +1,5 @@
+tensor(0),4,5
+tensor(1),2,5
+tensor(5),5,2
+tensor(11),1,0
+tensor(14),1,0

@@ -2,7 +2,7 @@ import os
 import platform
 import sys
 import re
-import urllib.request
+import requests
 import argparse
 from pathlib import Path
 import subprocess
@@ -23,12 +23,15 @@ whl_platform_str = ""
 
 base_URL = "https://download.stereolabs.com/zedsdk/"
 
-
-def pip_install(package, force_install=False):
+def pip_install(package, force_install=False, ignore_install=False, upgrade=False):
     try:
         call_list = [sys.executable, "-m", "pip", "install"]
-        if force_install:
+        if ignore_install:
             call_list.append("--ignore-installed")
+        if force_install:
+            call_list.append("--force-reinstall")
+        if upgrade:
+            call_list.append("--upgrade")
         call_list.append(package)
         err = subprocess.check_call(call_list)
     except Exception as e:
@@ -58,7 +61,8 @@ def install_win_dep(name, py_vers):
     whl_file_URL = "https://download.stereolabs.com/py/" + whl_file
     print("-> Downloading " + whl_file)
     whl_file = os.path.join(dirname, whl_file)
-    urllib.request.urlretrieve(whl_file_URL, whl_file)
+    r = requests.get(whl_file_URL, allow_redirects=True)
+    open(whl_file, 'wb').write(r.content)
     pip_install(whl_file)
 
 
@@ -172,9 +176,21 @@ whl_file = os.path.join(dirname, whl_file)
 #print(whl_file)
 print("-> Checking if " + whl_file_URL + " exists and is available")
 try:
-    urllib.request.urlretrieve(whl_file_URL, whl_file)
-except urllib.error.HTTPError as e:
+    r = requests.get(whl_file_URL, allow_redirects=True)
+    open(whl_file, 'wb').write(r.content)
+except requests.exceptions.HTTPError as e:
     print("Error downloading whl file ({})".format(e))
+except requests.exceptions.URLError as e:
+    print("Invalid SSL certificate, trying to fix the issue by reinstalling 'certifi' package")
+    err = pip_install("certifi", force_install=True, upgrade=True)
+    if err == 0:
+        # Retrying
+        try:
+            r = requests.get(whl_file_URL, allow_redirects=True)
+            open(whl_file, 'wb').write(r.content)
+        except Exception as e:
+            print("Error downloading whl file ({})".format(e))
+
 
 if check_valid_file(whl_file):
     # Internet is ok, file has been downloaded and is valid
@@ -190,14 +206,14 @@ if check_valid_file(whl_file):
     err_numpy = pip_install("numpy")
 
     if err != 0 or err_numpy != 0:
-        print("ERROR : An error occured, 'pip' failed to setup python dependencies packages (pyzed was NOT correctly setup)")
+        print("ERROR : An error occurred, 'pip' failed to setup python dependencies packages (pyzed was NOT correctly setup)")
         sys.exit(1)
 
-    err_pyzed = pip_install(whl_file, force_install=True)
+    err_pyzed = pip_install(whl_file, ignore_install=True)
     if err_pyzed == 0:
         print("Done")
     else:
-        print("ERROR : An error occured, 'pip' failed to setup pyzed package (pyzed was NOT correctly setup)")
+        print("ERROR : An error occurred, 'pip' failed to setup pyzed package (pyzed was NOT correctly setup)")
         sys.exit(1)
 
     if sys.platform == "win32":
@@ -215,8 +231,8 @@ if check_valid_file(whl_file):
             if os.path.isfile(source_dir + file):
                 shutil.copy(source_dir + file, pyzed_dir + file)
             else:
-                print("ERROR : An error occured, 'pip' failed to copy dll file " + source_dir + file + " (pyzed was NOT correctly setup)")
-    else: # Only on linux, on windows this script should be used everytime to avoid library search path issues
+                print("ERROR : An error occurred, 'pip' failed to copy dll file " + source_dir + file + " (pyzed was NOT correctly setup)")
+    else: # Only on linux, on windows this script should be used every time to avoid library search path issues
         print("  To install it later or on a different environment run : \n python -m pip install --ignore-installed " + whl_file)
     sys.exit(0)
 else:

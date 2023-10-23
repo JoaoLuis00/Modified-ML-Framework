@@ -12,11 +12,11 @@ KEYPOINTS = 24
 
 epochs = 70
 lr = 0.1
-subframes = 100
+subframes = 75
 
-datatype = 'with_multi_requests'
+datatype = 'other_corrected_data'
 
-experiment_name = f"stbln_{epochs}epochs_{lr}lr_dropafterepoch5060_batch128"
+experiment_name = f"stbln_{epochs}epochs_{lr}lr_dropafterepoch3040_batch122"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
 def main():
@@ -35,8 +35,8 @@ def main():
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
-        val_batch_size=32,
-        batch_size=128,
+        val_batch_size=64,
+        batch_size=122,
         epochs=epochs,
         in_channels=3,
         num_person=1,
@@ -44,16 +44,19 @@ def main():
         method_name='stbln',
         stbln_symmetric=False,
         temp_path = str(tmp_path),
-        drop_after_epoch=[50,60]
+        drop_after_epoch=[30,40]
     )
     
-    folder_path = Path(__file__).parent/'models'/ str(datatype) /str(learner.experiment_name)
+    folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)
 
+    if not os.path.isdir(Path(__file__).parent/'models'/str(datatype)):
+        os.mkdir(Path(__file__).parent/'models'/str(datatype))
+    
     if not os.path.isdir(folder_path):
         os.mkdir(folder_path)
     
     # Define datasets path
-    data_path = Path(__file__).parent / "data" / "pkl_files"
+    data_path = Path(__file__).parent / "data" / str(datatype)
     train_ds_path = data_path
     val_ds_path = data_path
 

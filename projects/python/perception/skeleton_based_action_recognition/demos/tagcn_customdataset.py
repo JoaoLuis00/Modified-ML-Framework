@@ -10,19 +10,22 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-epochs = 70
+epochs = 51
 lr = 0.1
-subframes = 75
+subframes = 150
 
-datatype = 'only_front_requests'
+datatype = 'dear_lord'
+#datatype = 'modified_val_data/augmented_data_noise'
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch128"
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch123"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
-# TENTAR COM OUTROS VALORES DE DROP E MUDAR PARA O DATA_TYPE COM OS REQUESTS SO PARA A FRENTE
-# AUMENTAR UM POUCO MAIS AS EPOCHS E EXPERIMENTAR COM OS MERDAS DOS DROPS
-# should try to mess with lr=0.15 subframes=100 drop=[50,70,90]/[50,70,90,110] ou qualquer coisa assim e ir vendo e avaliando a loss
+#! grab_30 e grab_32 tao mal, o aproach_51 continua comido da cabeça tentar o approach_11 verificar alguns dos grabs porque nao ta tudo
+
+#! alguns dos grabs dos 50s estão com a ordem trocada e alguns dos grab_0-5 não estão a ser usados testar para ver
+
+#? esquecer o augmented e tentar com u batch_sizediferente para ver se existe alguma mudança principalmente no approach
 
 def main():
 
@@ -40,7 +43,7 @@ def main():
         device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=64, 
-        batch_size=128, 
+        batch_size=122, 
         epochs=epochs,
         in_channels=3,
         num_person=1,
@@ -54,6 +57,9 @@ def main():
 
     folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)
 
+    if not os.path.isdir(Path(__file__).parent/'models'/str(datatype)):
+        os.mkdir(Path(__file__).parent/'models'/str(datatype))
+    
     if not os.path.isdir(folder_path):
         os.mkdir(folder_path)
     
@@ -76,6 +82,17 @@ def main():
         skeleton_data_type="joint",
         logging_path=str(folder_path)
     )
+    
+    # ret = learner.fit(
+    #     dataset=train_ds,
+    #     val_dataset=val_ds,
+    #     train_data_filename="augmented_train_data_noise.npy",
+    #     train_labels_filename="augmented_train_labels_noise.pkl",
+    #     val_data_filename="val_joints.npy",
+    #     val_labels_filename="val_labels.pkl",
+    #     skeleton_data_type="joint",
+    #     logging_path=str(folder_path)
+    # )
     
     results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt'),wrong_file=os.path.join(folder_path,'wrong.txt') )
     # print("Evaluation results: ", results)
