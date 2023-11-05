@@ -444,14 +444,8 @@ class MPPose(MPTarget):
     This target is used for pose estimation. It contains a list of Keypoints.
     Refer to kpt_names for keypoint naming. Adapted to support hands and a custom number of keypoints
     """
-    num_kpts = 46
-    kpt_names = ['l_sho', 'r_sho','l_elb', 'r_elb',
-                 #left hand
-                 'l_wri', 'l_thucmc', 'l_thumcp', 'l_thuip', 'l_thutip',
-                 'l_indmcp', 'l_indpip', 'l_inddip', 'l_indtip',
-                 'l_midmcp', 'l_midpip', 'l_middip', 'l_midtip',
-                 'l_rngmcp', 'l_rngpip', 'l_rngdip', 'l_rngtip',
-                 'l_pnkmcp', 'l_pnkpip', 'l_pnkdip', 'l_pnktip',
+    num_kpts = 24
+    kpt_names = ['l_sho', 'r_sho', 'r_elb',
                  #right hand 
                  'r_wri', 'r_thucmc', 'r_thumcp', 'r_thuip', 'r_thutip',
                  'r_indmcp', 'r_indpip', 'r_inddip', 'r_indtip',
@@ -519,21 +513,21 @@ class MPPose(MPTarget):
         out_string = "Pose ID: " + str(self.id)
         out_string += "\nDetection confidence: " + str(self.confidence) + "\nKeypoints name-position:\n"
         # noinspection PyUnresolvedReferences
-        for name, kpt in zip(Pose.kpt_names, self.data.tolist()):
+        for name, kpt in zip(MPPose.kpt_names, self.data.tolist()):
             out_string += name + ": " + str(kpt) + "\n"
         return out_string
 
     def __getitem__(self, key):
         """  Allows for accessing keypoint position using either integers or keypoint names """
         if isinstance(key, int):
-            if key >= Pose.num_kpts or key < 0:
-                raise ValueError('Pose supports ' + str(Pose.num_kpts) + ' keypoints. Keypoint id ' + str(
+            if key >= MPPose.num_kpts or key < 0:
+                raise ValueError('Pose supports ' + str(MPPose.num_kpts) + ' keypoints. Keypoint id ' + str(
                     key) + ' is not within the supported range.')
             else:
                 return self.data[key]
         elif isinstance(key, str):
             try:
-                position = Pose.kpt_names.index(key)
+                position = MPPose.kpt_names.index(key)
                 return self.data[position]
             except:
                 raise ValueError('Keypoint ' + key + ' not supported.')

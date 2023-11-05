@@ -175,7 +175,7 @@ def pose2numpy(num_frames, poses_list, kptscores_list, num_channels=3):
     while diff > 0:
         num_tiles = int(diff / num_frames)
         if num_tiles > 0:
-            data_numpy = tile(data_numpy, 2, num_tiles+1)
+            data_numpy = tile(data_numpy, data_numpy.shape[1], num_tiles+1)
             num_frames = data_numpy.shape[2]
             diff = T - num_frames
         elif num_tiles == 0:

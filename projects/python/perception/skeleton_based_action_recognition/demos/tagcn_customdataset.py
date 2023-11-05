@@ -10,22 +10,16 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-epochs = 51
+epochs = 70
 lr = 0.1
-subframes = 150
+subframes = 100
 
-datatype = 'dear_lord'
+datatype = 'final_v2'
 #datatype = 'modified_val_data/augmented_data_noise'
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch123"
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch30"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
-
-#! grab_30 e grab_32 tao mal, o aproach_51 continua comido da cabeça tentar o approach_11 verificar alguns dos grabs porque nao ta tudo
-
-#! alguns dos grabs dos 50s estão com a ordem trocada e alguns dos grab_0-5 não estão a ser usados testar para ver
-
-#? esquecer o augmented e tentar com u batch_sizediferente para ver se existe alguma mudança principalmente no approach
 
 def main():
 
@@ -38,12 +32,12 @@ def main():
         num_frames=300,
         num_point=KEYPOINTS,
         dataset_name="custom",
-        num_class=6,
+        num_class=4,
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=64, 
-        batch_size=122, 
+        batch_size=30, 
         epochs=epochs,
         in_channels=3,
         num_person=1,

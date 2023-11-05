@@ -22,11 +22,8 @@ import time
 import pandas as pd
 from typing import Dict
 import pyzed.sl as sl
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 import mediapipe as mp
 from pathlib import Path
-from mediapipe.framework.formats import landmark_pb2
 import math
 from opendr.engine.target import MPPose
 
@@ -43,8 +40,8 @@ mp_hands = mp.solutions.hands
 mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
-video_folder_path = '/home/joao/Zed/svo'
-svo_path = os.path.join(str(video_folder_path), str('approach_30' + '.svo'))
+video_folder_path = '/home/joao/Zed'
+svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '.svo'))
 
 TARGET_FRAMES = 300
 NUM_KEYPOINTS = 24
@@ -120,6 +117,17 @@ def tile(a, dim, n_tile):
     tiled_a = torch.index_select(a, dim, order_index)
     return tiled_a.numpy()
 
+def np_tile(a, dim, n_tile):
+    # Get the shape of the input array
+    shape = list(a.shape)
+    # Insert 1 in the shape to represent the dimension to be tiled
+    shape.insert(dim, 1)
+    # Use np.tile to repeat the array along the specified dimension
+    tiled_a = np.tile(a[:, np.newaxis, ...], (1, n_tile) + tuple(shape))
+    # Use np.squeeze to remove singleton dimensions
+    tiled_a = np.squeeze(tiled_a, axis=dim + 1)
+    return tiled_a
+
 
 def pose2numpy(num_frames, poses_list):
     C = 3
@@ -134,21 +142,22 @@ def pose2numpy(num_frames, poses_list):
 
     # if we have less than 75 frames, repeat frames to reach 75
     diff = T - num_frames
-    if diff != 0:
-        while diff > 0:
-            num_tiles = int(diff / num_frames)
-            if num_tiles > 0:
-                data_numpy = tile(data_numpy, data_numpy.shape[1], num_tiles+1)
-                num_frames = data_numpy.shape[2]
-                diff = T - num_frames
-            elif num_tiles == 0:
-                skeleton_seq[:, :, :num_frames, :, :] = data_numpy
-                for j in range(diff):
-                    skeleton_seq[:, :, num_frames+j, :,
-                                 :] = data_numpy[:, :, -1, :, :]
+
+    while diff > 0:
+        num_tiles = int(diff / num_frames)
+        print(num_tiles)
+        if num_tiles > 0:
+            data_numpy = tile(data_numpy, 2, num_tiles+1)
+            print(data_numpy.shape)
+            num_frames = data_numpy.shape[2]
+            diff = T - num_frames
+            print(diff)
+        elif num_tiles == 0:
+            skeleton_seq[:, :, :num_frames, :, :] = data_numpy
+            for j in range(diff):
+                skeleton_seq[:, :, num_frames+j, :,
+                                :] = data_numpy[:, :, -1, :, :]
             break
-    elif diff == 0:
-        skeleton_seq = data_numpy
 
     return skeleton_seq
 
@@ -207,9 +216,9 @@ def sort_skeleton_data(results, point_cloud) -> MPPose :
     pose_keypoints = np.ones((NUM_KEYPOINTS, 3), dtype=np.int32) * -1
     try:  # change the z coordinate to get from the generated depth information
         # Left Shoulder
-        pose_keypoints[0, 0] = c_x = round(
+        pose_keypoints[0, 0] = c_x = int(
             results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].x * 1920)
-        pose_keypoints[0, 1] = c_y = round(
+        pose_keypoints[0, 1] = c_y = int(
             results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].y * 1080)
         err, point_cloud_value = point_cloud.get_value(c_x, c_y)
 
@@ -220,11 +229,15 @@ def sort_skeleton_data(results, point_cloud) -> MPPose :
         pose_keypoints[0, 2] = int(distance)
         # keypoints_scores[0, 0] = float(
         #     results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].visibility)
+    except (IndexError, AttributeError) as e:
+        # print(f"Values missing Pose -> sample: {s_name}")
+        skip_frame = True
 
+    try:
         # Right Shoulder
-        pose_keypoints[1, 0] = c_x = round(
+        pose_keypoints[1, 0] = c_x = int(
             results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].x * 1920)
-        pose_keypoints[1, 1] = c_y = round(
+        pose_keypoints[1, 1] = c_y = int(
             results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].y * 1080)
 
         err, point_cloud_value = point_cloud.get_value(c_x, c_y)
@@ -234,7 +247,11 @@ def sort_skeleton_data(results, point_cloud) -> MPPose :
         pose_keypoints[1, 2] = int(distance)
         # keypoints_scores[1, 0] = float(
         #     results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].visibility)
+    except (IndexError, AttributeError) as e:
+        # print(f"Values missing Pose -> sample: {s_name}")
+        skip_frame = True
 
+    try:    
         # Right Elbow
         pose_keypoints[2, 0] = c_x = int(
             results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].x * 1920)
@@ -270,37 +287,36 @@ def sort_skeleton_data(results, point_cloud) -> MPPose :
     except (IndexError, AttributeError) as e:
         # print(f"Values missing Pose -> sample: {s_name}")
         skip_frame = True
-
     pose = MPPose(pose_keypoints, -1)
     return pose
 
 if __name__ == '__main__':
 
-    # # Action classifier
-    # if METHOD == 'tagcn':
-    #     action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom',
-    #                                                  in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=6, num_person=1)
-    # else:
-    #     print("ERROR! MODEL NOT IMPLEMENTED")
-    #     exit()
-    #     # action_classifier = SpatioTemporalGCNLearner(device=device, dataset_name='nturgbd_cv', method_name=args.method,
-    #     #                                              in_channels=2, num_point=18, graph_type='openpose')
+    # Action classifier
+    if METHOD == 'tagcn':
+        action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom',
+                                                     in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=6, num_person=1)
+    else:
+        print("ERROR! MODEL NOT IMPLEMENTED")
+        exit()
+        # action_classifier = SpatioTemporalGCNLearner(device=device, dataset_name='nturgbd_cv', method_name=args.method,
+        #                                              in_channels=2, num_point=18, graph_type='openpose')
 
-    # print('print_numpoints', action_classifier.num_point)
+    print('print_numpoints', action_classifier.num_point)
 
-    # model_saved_path = Path(__file__).parent / 'models' / 'GOOD_MODELS' / str(MODEL_TO_TEST) / 'model'
-    # action_classifier.load(model_saved_path, str(MODEL_TO_TEST.split('_DEARLORD')[0]), verbose=True)
+    model_saved_path = Path(__file__).parent / 'models' / 'GOOD_MODELS' / str(MODEL_TO_TEST) / 'model'
+    action_classifier.load(model_saved_path, str(MODEL_TO_TEST.split('_DEARLORD')[0]), verbose=True)
 
     #action_classifier.optimize()
 
-    #image_provider = VideoReader()  # loading a video or get the camera id 0
+    image_provider = VideoReader()  # loading a video or get the camera id 0
 
     counter, avg_fps = 0, 0
     poses_list = []
     window = int(30)
     f_ind = 0
-    detector = mp_holistic.Holistic(min_detection_confidence=0.4, min_tracking_confidence=0.4, model_complexity = 1)
-    print('here')
+    detector = mp_holistic.Holistic(min_detection_confidence=0.4, min_tracking_confidence=0.4, model_complexity = 2)
+
     init_params = sl.InitParameters()
     init_params.svo_real_time_mode = False  # Convert in realtime
     init_params.coordinate_units = sl.UNIT.MILLIMETER  # Use milliliter units (for depth measurements)
@@ -320,58 +336,53 @@ if __name__ == '__main__':
     if err != sl.ERROR_CODE.SUCCESS:
         exit(1)
     
-    left_image = sl.Mat()
-    
-    
+    svo_image = sl.Mat()
+    point_cloud = sl.Mat()
+    cnt = 0
     
     while True:
-        zed.grab(rt_param)
-        
-        zed.retrieve_image(left_image, sl.VIEW.LEFT)
-        
-        cv2.imshow("ZED", cv2.resize(left_image.get_data(),
-                                   (int(1920 / 1.5), int(1080 / 1.5))))
-        
-        key = cv2.waitKey(delay=2)
-        if key == ord('q'):
-            break
-    
-    for img, point_cloud in image_provider: #returns img in rgb format
-        # if f_ind % window == 0:
-        #     start_time = time.perf_counter()
-        #     img.flags.writeable = False
-            
-        #     results = detector.process(img)
-            
-        #     annotated_bgr_image = draw_skeletons(cv2.cvtColor(img, cv2.COLOR_RGB2BGR), results)
-        #     pose = sort_skeleton_data(results, point_cloud)
-        #     counter += 1
-        #     poses_list.append(pose)
+        if zed.grab(rt_param) == sl.ERROR_CODE.SUCCESS :
+            zed.retrieve_image(svo_image) #cam.retrieve_image(svo_image, sl.VIEW.SIDE_BY_SIDE)
+            zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
 
-        #     if counter > (TARGET_FRAMES): #if more than 150 frames 
-        #         poses_list.pop(0)
-        #         counter = TARGET_FRAMES
-        #     if counter > 0:
-        #         skeleton_seq = pose2numpy(counter, poses_list)
-        #         prediction = action_classifier.infer(skeleton_seq)
-        #         category_labels = preds2label(prediction.confidence)
-        #         print(category_labels)
-        #         draw_preds(annotated_bgr_image, category_labels)
+            img_rgb = cv2.cvtColor(svo_image.get_data(), cv2.COLOR_BGRA2RGB)
+            
+            #if f_ind % window == 0:
+            start_time = time.perf_counter()
+            img_rgb.flags.writeable = False
+            
+            results = detector.process(img_rgb)
 
-        #     # Calculate a running average on FPS
-        #     end_time = time.perf_counter()
-        #     fps = 1.0 / (end_time - start_time)
-        #     avg_fps = 0.8 * fps + 0.2 * fps
-        #     # Wait a few frames for FPS to stabilize
-        #     if counter > 5:
-        #         annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (avg_fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
-        #                           1, (255, 0, 0), 2, cv2.LINE_AA)
-        #     cv2.imshow('Result', annotated_bgr_image)
-        cv2.imshow('yup', img)
-        f_ind += 1
-        key = cv2.waitKey(500)
-        if key == ord('q'):
-            break
+            annotated_bgr_image = draw_skeletons(img_rgb, results)
+            pose = sort_skeleton_data(results, point_cloud)
+            print(pose)
+            counter += 1
+            poses_list.append(pose)
+
+            if counter > (TARGET_FRAMES): #if more than 150 frames 
+                poses_list.pop(0)
+                counter = TARGET_FRAMES
+            if counter > 0:
+                skeleton_seq = pose2numpy(counter, poses_list)
+                print(skeleton_seq.shape)
+                prediction = action_classifier.infer(skeleton_seq)
+                category_labels = preds2label(prediction.confidence)
+                print(category_labels)
+                draw_preds(annotated_bgr_image, category_labels)
+
+            # # Calculate a running average on FPS
+            # end_time = time.perf_counter()
+            # fps = 1.0 / (end_time - start_time)
+            # avg_fps = 0.8 * fps + 0.2 * fps
+            # # Wait a few frames for FPS to stabilize
+            # if counter > 5:
+            #     annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (avg_fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
+            #                       1, (255, 0, 0), 2, cv2.LINE_AA)
+            cv2.imshow('Result', annotated_bgr_image)
+            f_ind += 1
+            key = cv2.waitKey(100)
+            if key == ord('q'):
+                break
 
     print("Average inference fps: ", avg_fps)
     cv2.destroyAllWindows()

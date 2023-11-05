@@ -12,9 +12,9 @@ KEYPOINTS = 24
 
 epochs = 70
 lr = 0.1
-subframes = 75
+subframes = 100
 
-datatype = 'other_corrected_data'
+datatype = 'final_v2'
 
 experiment_name = f"stbln_{epochs}epochs_{lr}lr_dropafterepoch3040_batch122"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
@@ -31,12 +31,12 @@ def main():
         num_point=KEYPOINTS,
         experiment_name=experiment_name,
         dataset_name="custom",
-        num_class=6,
+        num_class=4,
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=64,
-        batch_size=122,
+        batch_size=61,
         epochs=epochs,
         in_channels=3,
         num_person=1,

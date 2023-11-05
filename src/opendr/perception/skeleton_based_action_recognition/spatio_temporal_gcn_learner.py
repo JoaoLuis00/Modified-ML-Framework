@@ -511,6 +511,7 @@ class SpatioTemporalGCNLearner(Learner):
 
         if not isinstance(SkeletonSeq_batch, SkeletonSequence):
             SkeletonSeq_batch = SkeletonSequence(SkeletonSeq_batch)
+            print(SkeletonSeq_batch)
         SkeletonSeq_batch = torch.from_numpy(SkeletonSeq_batch.numpy())
 
         if "cuda" in self.device:
@@ -518,7 +519,8 @@ class SpatioTemporalGCNLearner(Learner):
         else:
             SkeletonSeq_batch = Variable(SkeletonSeq_batch.float(), requires_grad=False)
         if self.ort_session is not None:
-            output = self.ort_session.run(None, {'data': np.array(SkeletonSeq_batch.cpu())})
+            output = self.ort_session.run(None, {'onnx_input': np.array(SkeletonSeq_batch.cpu())})
+            #output = self.ort_session.run(None, {'data': np.array(SkeletonSeq_batch.cpu())})
         else:
             if self.model is None:
                 raise UserWarning("No model is loaded, cannot run inference. Load a model first using load().")
@@ -531,7 +533,7 @@ class SpatioTemporalGCNLearner(Learner):
             output, l1 = output
         else:
             output = output
-
+        print(output)
         m = nn.Softmax(dim=0)
         softmax_predictions = m(output.data[0])
         class_ind = int(torch.argmax(softmax_predictions))

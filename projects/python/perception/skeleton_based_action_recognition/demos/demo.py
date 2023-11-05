@@ -21,6 +21,9 @@ import cv2
 import time
 import pandas as pd
 from typing import Dict
+import os
+from pathlib import Path
+
 
 
 # opendr imports
@@ -105,7 +108,7 @@ def select_2_poses(poses):
     return selected_poses
 
 
-NTU60_CLASSES = pd.read_csv("./ntu60_labels.csv", verbose=True, index_col=0).to_dict()["name"]
+NTU60_CLASSES = pd.read_csv(str(Path(__file__).parent / "ntu60_labels.csv"), verbose=True, index_col=0).to_dict()["name"]
 
 
 def preds2label(confidence):
