@@ -20,8 +20,8 @@ TARGET_FRAMES = 300
 NUM_KEYPOINTS = 24
 METHOD = 'tagcn'
 #MODEL_TO_TEST = 'stgcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
-MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15'
-#MODEL_TO_TEST = 'tagcn_54epochs_0.1lr_125subframes_dropafterepoch5060_batch15'
+#MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15'
+MODEL_TO_TEST = 'tagcn_54epochs_0.1lr_125subframes_dropafterepoch5060_batch15'
 
 ACTION_CLASSES = pd.read_csv(os.path.join(Path(__file__).parent,'custom_labels.csv'), verbose=True, index_col=0).to_dict()["name"]
 
@@ -43,7 +43,7 @@ action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
 
 load_data = np.load(str(Path(__file__).parent / 'data' / "final_v2/val_joints.npy"), allow_pickle=True)
 
-one_sample = load_data[1,...]
+one_sample = load_data[0,...]
 
 sample_npy = np.zeros((1,3,300,24,1))
 

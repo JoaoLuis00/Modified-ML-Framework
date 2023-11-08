@@ -40,7 +40,7 @@ mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
 video_folder_path = '/home/joao/Zed'
-svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '.svo'))
+svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/grab_11' + '.svo'))
 
 TARGET_FRAMES = 300
 NUM_KEYPOINTS = 24
@@ -354,16 +354,16 @@ if __name__ == '__main__':
             counter += 1
             poses_list.append(pose)
 
-            if counter > (TARGET_FRAMES): #if more than 150 frames 
-                poses_list.pop(0)
-                counter = TARGET_FRAMES
-            if counter > 0:
-                skeleton_seq = pose2numpy(counter, poses_list,3)
-                print(skeleton_seq.shape)
-                prediction = action_classifier.infer(skeleton_seq)
-                category_labels = preds2label(prediction.confidence)
-                print(category_labels)
-                draw_preds(annotated_bgr_image, category_labels)
+            # if counter > (TARGET_FRAMES): #if more than 150 frames 
+            #     poses_list.pop(0)
+            #     counter = TARGET_FRAMES
+            # if counter > 0:
+            #     skeleton_seq = pose2numpy(counter, poses_list,3)
+            #     print(skeleton_seq.shape)
+            #     prediction = action_classifier.infer(skeleton_seq)
+            #     category_labels = preds2label(prediction.confidence)
+            #     print(category_labels)
+            #     draw_preds(annotated_bgr_image, category_labels)
 
             # # Calculate a running average on FPS
             # end_time = time.perf_counter()
