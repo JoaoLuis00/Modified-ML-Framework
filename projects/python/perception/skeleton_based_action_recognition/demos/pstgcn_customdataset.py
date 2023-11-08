@@ -2,7 +2,6 @@ import torch
 import os
 from opendr.perception.skeleton_based_action_recognition.progressive_spatio_temporal_gcn_learner import (
     ProgressiveSpatioTemporalGCNLearner,
-    _MODEL_NAMES,
 )
 
 from opendr.engine.datasets import ExternalDataset
@@ -10,39 +9,55 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-experiment_name = "pstgcn_custom"
+epochs = 30
+lr = 0.1
+subframes = 100
+
+datatype = 'final_v2'
+#datatype = 'modified_val_data/augmented_data_noise'
+
+experiment_name = f"pstgcn_{epochs}epochs_{lr}lr_dropafterepoch5060_batch15"
+#experiment_name = f"test"
+tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
 def main():
-    tmp_path = Path(__file__).parent / "tmp"
 
     # Define learner
     learner = ProgressiveSpatioTemporalGCNLearner(
         batch_size=15,
-        epochs=50,
+        device='cuda',
+        epochs=epochs,
         checkpoint_after_iter=10,
-        val_batch_size=5,
+        val_batch_size=64,
         dataset_name="custom",
         experiment_name=experiment_name,
         blocksize=20,
-        numblocks=1,
+        numblocks=9,
         numlayers=1,
         topology=[],
         layer_threshold=1e-4,
         block_threshold=1e-4,
         graph_type='custom',
-        num_class=5,
+        num_class=4,
         num_point=KEYPOINTS,
         in_channels=3,
-        tmp_path = Path(__file__).parent/'models'/learner.experiment_name/'model'
+        temp_path=str(tmp_path),
+        num_workers=8,
+        num_person=1,
+        lr=lr,
+        drop_after_epoch=[50,60]
     )
 
-    folder_path = Path(__file__).parent/'models'/learner.experiment_name
+    folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)
 
+    if not os.path.isdir(Path(__file__).parent/'models'/str(datatype)):
+        os.mkdir(Path(__file__).parent/'models'/str(datatype))
+    
     if not os.path.isdir(folder_path):
         os.mkdir(folder_path)
     
     # Define datasets path
-    data_path = Path(__file__).parent / "data" / "pkl_files"
+    data_path = Path(__file__).parent / "data" / str(datatype)
     train_ds_path = data_path
     val_ds_path = data_path
 
@@ -58,15 +73,16 @@ def main():
         val_data_filename="val_joints.npy",
         val_labels_filename="val_labels.pkl",
         skeleton_data_type="joint",
+        logging_path=str(folder_path)
     )
 
-    results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt') )
+    results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt'),wrong_file=os.path.join(folder_path,'wrong.txt') )
     # print("Evaluation results: ", results)
     with open(os.path.join(folder_path, f'{learner.experiment_name}.txt'), 'w') as f:
         f.write(str(ret))
         f.write(str(results))
 
-    learner.optimize(do_constant_folding=True)
+    #learner.optimize(do_constant_folding=True)
     
     save_model_path = folder_path/'model'
     

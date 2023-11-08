@@ -208,7 +208,7 @@ if __name__ == '__main__':
                 counter = args.num_frames
             if counter > 0:
                 skeleton_seq = pose2numpy(args, counter, poses_list)
-
+                print(skeleton_seq.shape)
                 prediction = action_classifier.infer(skeleton_seq)
                 category_labels = preds2label(prediction.confidence)
                 print(category_labels)

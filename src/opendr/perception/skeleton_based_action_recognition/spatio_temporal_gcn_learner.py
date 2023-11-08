@@ -511,7 +511,6 @@ class SpatioTemporalGCNLearner(Learner):
 
         if not isinstance(SkeletonSeq_batch, SkeletonSequence):
             SkeletonSeq_batch = SkeletonSequence(SkeletonSeq_batch)
-            print(SkeletonSeq_batch)
         SkeletonSeq_batch = torch.from_numpy(SkeletonSeq_batch.numpy())
 
         if "cuda" in self.device:
@@ -533,8 +532,8 @@ class SpatioTemporalGCNLearner(Learner):
             output, l1 = output
         else:
             output = output
-        print(output)
         m = nn.Softmax(dim=0)
+        print(output)
         softmax_predictions = m(output.data[0])
         class_ind = int(torch.argmax(softmax_predictions))
         class_description = self.classes_dict[class_ind]

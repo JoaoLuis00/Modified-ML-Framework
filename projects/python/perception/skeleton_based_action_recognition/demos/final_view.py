@@ -35,7 +35,6 @@ from opendr.perception.skeleton_based_action_recognition import SpatioTemporalGC
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_holistic = mp.solutions.holistic
-mp_hands = mp.solutions.hands
 
 mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
@@ -48,7 +47,6 @@ NUM_KEYPOINTS = 24
 METHOD = 'tagcn'
 MODEL_TO_TEST = 'tagcn_51epochs_0.1lr_150subframes_dropafterepoch3040_batch123_DEARLORD'
 #torch1.9.0+cu111
-mp_pose = mp.solutions.pose
 
 class VideoReader(object):
     
@@ -129,8 +127,8 @@ def np_tile(a, dim, n_tile):
     return tiled_a
 
 
-def pose2numpy(num_frames, poses_list):
-    C = 3
+def pose2numpy(num_frames, poses_list, num_channels=4):
+    C = num_channels
     T = TARGET_FRAMES
     V = NUM_KEYPOINTS
     M = 1  # num_person_in
@@ -142,22 +140,21 @@ def pose2numpy(num_frames, poses_list):
 
     # if we have less than 75 frames, repeat frames to reach 75
     diff = T - num_frames
-
-    while diff > 0:
-        num_tiles = int(diff / num_frames)
-        print(num_tiles)
-        if num_tiles > 0:
-            data_numpy = tile(data_numpy, 2, num_tiles+1)
-            print(data_numpy.shape)
-            num_frames = data_numpy.shape[2]
-            diff = T - num_frames
-            print(diff)
-        elif num_tiles == 0:
-            skeleton_seq[:, :, :num_frames, :, :] = data_numpy
-            for j in range(diff):
-                skeleton_seq[:, :, num_frames+j, :,
-                                :] = data_numpy[:, :, -1, :, :]
+    if diff != 0:
+        while diff > 0:
+            num_tiles = int(diff / num_frames)
+            if num_tiles > 0:
+                data_numpy = tile(data_numpy, data_numpy.shape[1], num_tiles+1)
+                num_frames = data_numpy.shape[2]
+                diff = T - num_frames
+            elif num_tiles == 0:
+                skeleton_seq[:, :, :num_frames, :, :] = data_numpy
+                for j in range(diff):
+                    skeleton_seq[:, :, num_frames+j, :,
+                                 :] = data_numpy[:, :, -1, :, :]
             break
+    elif diff == 0:
+        skeleton_seq = data_numpy
 
     return skeleton_seq
 
@@ -174,7 +171,6 @@ def select_2_poses(poses):
         selected_poses.append(poses[index[i]])
     return selected_poses
 
-print()
 ACTION_CLASSES = pd.read_csv(os.path.join(Path(__file__).parent,'custom_labels.csv'), verbose=True, index_col=0).to_dict()["name"]
 
 
@@ -213,7 +209,7 @@ def draw_skeletons(image, results):
     return image
 
 def sort_skeleton_data(results, point_cloud) -> MPPose :
-    pose_keypoints = np.ones((NUM_KEYPOINTS, 3), dtype=np.int32) * -1
+    pose_keypoints = np.ones((NUM_KEYPOINTS, 3), dtype=np.int32) * 0
     try:  # change the z coordinate to get from the generated depth information
         # Left Shoulder
         pose_keypoints[0, 0] = c_x = int(
@@ -355,7 +351,6 @@ if __name__ == '__main__':
 
             annotated_bgr_image = draw_skeletons(img_rgb, results)
             pose = sort_skeleton_data(results, point_cloud)
-            print(pose)
             counter += 1
             poses_list.append(pose)
 
@@ -363,7 +358,7 @@ if __name__ == '__main__':
                 poses_list.pop(0)
                 counter = TARGET_FRAMES
             if counter > 0:
-                skeleton_seq = pose2numpy(counter, poses_list)
+                skeleton_seq = pose2numpy(counter, poses_list,3)
                 print(skeleton_seq.shape)
                 prediction = action_classifier.infer(skeleton_seq)
                 category_labels = preds2label(prediction.confidence)

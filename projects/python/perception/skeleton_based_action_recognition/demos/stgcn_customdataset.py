@@ -1,5 +1,5 @@
 import torch
-
+import os,sys
 from opendr.perception.skeleton_based_action_recognition.continual_stgcn_learner import (
     SpatioTemporalGCNLearner,
     _MODEL_NAMES,
@@ -8,45 +8,65 @@ from opendr.perception.skeleton_based_action_recognition.continual_stgcn_learner
 from opendr.engine.datasets import ExternalDataset
 from pathlib import Path
 
+KEYPOINTS = 24
+
+epochs = 50
+lr = 0.1
+subframes = 100
+
+datatype = 'final_v2'
+#datatype = 'modified_val_data/augmented_data_noise'
+
+experiment_name = f"stgcn_{epochs}epochs_{lr}lr_dropafterepoch5060_batch61"
+#experiment_name = f"test"
+tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
 def main():
-    tmp_path = Path(__file__).parent / "tmp"
 
     # Define learner
     learner = SpatioTemporalGCNLearner(
         # device=args.device,
-        temp_path=str(tmp_path),
         # batch_size=args.batch_size,
         # backbone=args.backbone,
         num_workers=8,
         num_frames=300,
-        num_point=46,
-        experiment_name="stgcn_custom",
+        num_point=KEYPOINTS,
         dataset_name="custom",
         num_class=4,
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
-        val_batch_size=5,
-        batch_size=15,
-        epochs=30,
+        val_batch_size=64, 
+        batch_size=61, 
+        epochs=epochs,
         in_channels=3,
         num_person=1,
-        lr=0.1,
-        
+        lr=lr,
+        method_name='stgcn',
+        num_subframes=subframes,
+        experiment_name=experiment_name,
+        temp_path = str(tmp_path),
+        drop_after_epoch=[50,60]
     )
 
-    # Define datasets path
-    data_path = tmp_path / "data"
+    folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)
 
-    train_ds_path = data_path / "custom"
-    val_ds_path = data_path / "custom"
+    if not os.path.isdir(Path(__file__).parent/'models'/str(datatype)):
+        os.mkdir(Path(__file__).parent/'models'/str(datatype))
+    
+    if not os.path.isdir(folder_path):
+        os.mkdir(folder_path)
+    
+    # Define datasets path
+    data_path = Path(__file__).parent / "data" / str(datatype)
+    train_ds_path = data_path
+    val_ds_path = data_path
 
     train_ds = ExternalDataset(path=str(train_ds_path), dataset_type="custom")
 
     val_ds = ExternalDataset(path=str(val_ds_path), dataset_type="custom")
 
-    learner.fit(
+    ret = learner.fit(
         dataset=train_ds,
         val_dataset=val_ds,
         train_data_filename="train_joints.npy",
@@ -54,15 +74,35 @@ def main():
         val_data_filename="val_joints.npy",
         val_labels_filename="val_labels.pkl",
         skeleton_data_type="joint",
+        logging_path=str(folder_path)
     )
-
-    # results = learner.eval(val_ds)
-    # print("Evaluation results: ", results)
-
-    learner.optimize(do_constant_folding=True)
     
-    save_path = Path(__file__).parent/'models'
-    learner.save(path=str(save_path),model_name='stgcn_optimized')
+    # ret = learner.fit(
+    #     dataset=train_ds,
+    #     val_dataset=val_ds,
+    #     train_data_filename="augmented_train_data_noise.npy",
+    #     train_labels_filename="augmented_train_labels_noise.pkl",
+    #     val_data_filename="val_joints.npy",
+    #     val_labels_filename="val_labels.pkl",
+    #     skeleton_data_type="joint",
+    #     logging_path=str(folder_path)
+    # )
+    
+    results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt'),wrong_file=os.path.join(folder_path,'wrong.txt') )
+    # print("Evaluation results: ", results)
+    with open(os.path.join(folder_path, f'{learner.experiment_name}.txt'), 'w') as f:
+        f.write(str(ret))
+        f.write(str(results))
+
+    #learner.optimize(do_constant_folding=True)
+    
+    save_model_path = folder_path/'model'
+    
+    if not os.path.isdir(save_model_path):
+        os.mkdir(save_model_path)
+    
+    learner.save(path=str(save_model_path),model_name=f'{learner.experiment_name}')
+    
 
 if __name__ == "__main__":
     main()
