@@ -10,14 +10,14 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-epochs = 54
+epochs = 100
 lr = 0.1
-subframes = 125
+subframes = 150
 
 datatype = 'final_v2'
 #datatype = 'modified_val_data/augmented_data_noise'
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch5060_batch15"
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch6070_batch15"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
@@ -46,7 +46,7 @@ def main():
         num_subframes=subframes,
         experiment_name=experiment_name,
         temp_path = str(tmp_path),
-        drop_after_epoch=[50,60]
+        drop_after_epoch=[60,70]
     )
 
     folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)

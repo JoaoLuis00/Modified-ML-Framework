@@ -20,8 +20,9 @@ TARGET_FRAMES = 300
 NUM_KEYPOINTS = 24
 METHOD = 'tagcn'
 #MODEL_TO_TEST = 'stgcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
-#MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15'
-MODEL_TO_TEST = 'tagcn_54epochs_0.1lr_125subframes_dropafterepoch5060_batch15'
+MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15' #mais melhor bom
+#MODEL_TO_TEST = 'tagcn_54epochs_0.1lr_125subframes_dropafterepoch5060_batch15'
+
 
 ACTION_CLASSES = pd.read_csv(os.path.join(Path(__file__).parent,'custom_labels.csv'), verbose=True, index_col=0).to_dict()["name"]
 
@@ -52,5 +53,13 @@ sample_npy[0,:,:,:,:] = one_sample
 prediction = action_classifier.infer(sample_npy)
 
 category_labels = preds2label(prediction.confidence)
+
+first_key = next(iter(category_labels))
+first_value = category_labels[first_key]
+
+new_key = 'approachamos'
+
+#category_labels = {new_key: first_value, **{k: v for k,v in category_labels.items() if k!=new_key and k!= first_key}}
+
 print(category_labels)
 

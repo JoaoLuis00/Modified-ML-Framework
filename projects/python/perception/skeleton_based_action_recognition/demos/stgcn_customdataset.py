@@ -10,14 +10,14 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-epochs = 50
+epochs = 60
 lr = 0.1
 subframes = 100
 
 datatype = 'final_v2'
 #datatype = 'modified_val_data/augmented_data_noise'
 
-experiment_name = f"stgcn_{epochs}epochs_{lr}lr_dropafterepoch5060_batch61"
+experiment_name = f"stgcn_{epochs}epochs_{lr}lr_dropafterepoch5060_batch15"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
@@ -37,7 +37,7 @@ def main():
         device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=64, 
-        batch_size=61, 
+        batch_size=20, 
         epochs=epochs,
         in_channels=3,
         num_person=1,

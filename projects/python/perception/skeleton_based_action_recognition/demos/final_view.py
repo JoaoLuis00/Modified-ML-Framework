@@ -26,6 +26,7 @@ import mediapipe as mp
 from pathlib import Path
 import math
 from opendr.engine.target import MPPose
+from math import atan2, cos, sin, sqrt, pi
 
 # opendr imports
 import argparse
@@ -40,12 +41,20 @@ mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
 video_folder_path = '/home/joao/Zed'
-svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/grab_11' + '.svo'))
+svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/approach_31' + '.svo'))
 
 TARGET_FRAMES = 300
 NUM_KEYPOINTS = 24
-METHOD = 'tagcn'
-MODEL_TO_TEST = 'tagcn_51epochs_0.1lr_150subframes_dropafterepoch3040_batch123_DEARLORD'
+MODEL_TO_TEST = 'stgcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
+#MODEL_TO_TEST = 'tagcn_23epochs_0.1lr_150subframes_dropafterepoch5060_batch10'
+#MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15'
+#MODEL_TO_TEST = 'tagcn_54epochs_0.1lr_125subframes_dropafterepoch5060_batch15'
+
+if MODEL_TO_TEST.split('_')[0] == 'tagcn':
+    METHOD = 'tagcn'
+else:
+    METHOD = 'stgcn'
+
 #torch1.9.0+cu111
 
 class VideoReader(object):
@@ -188,10 +197,16 @@ def draw_preds(frame, preds: Dict):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, (0, 255, 255), 2,)
         
-def draw_skeletons(image, results):
+def draw_skeletons(image, results, contours, obj_center_point, obj_edge_point):
     # Draw landmark annotation on the image.
     image.flags.writeable = True
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    try:
+        image = drawContours(image, contours, center=obj_center_point, top_point=obj_edge_point)
+    except (IndexError,TypeError):
+        pass
+    
     mp_drawing.draw_landmarks(
         image,
         results.pose_landmarks,
@@ -208,8 +223,12 @@ def draw_skeletons(image, results):
             mp_drawing_styles.get_default_hand_connections_style())
     return image
 
-def sort_skeleton_data(results, point_cloud) -> MPPose :
+def sort_skeleton_data(results, point_cloud):
     pose_keypoints = np.ones((NUM_KEYPOINTS, 3), dtype=np.int32) * 0
+    hand_keypoints_list = []
+    missed_hand = missed_pose = False
+    mean_x = mean_y = mean_z = -1
+
     try:  # change the z coordinate to get from the generated depth information
         # Left Shoulder
         pose_keypoints[0, 0] = c_x = int(
@@ -222,12 +241,13 @@ def sort_skeleton_data(results, point_cloud) -> MPPose :
                                 point_cloud_value[1] * point_cloud_value[1] +
                                 point_cloud_value[2] * point_cloud_value[2])
 
-        pose_keypoints[0, 2] = int(distance)
-        # keypoints_scores[0, 0] = float(
-        #     results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].visibility)
+        pose_keypoints[0, 2] = c_z = int(distance)
+        
+        hand_keypoints_list.append((c_x,c_y,c_z))
+
     except (IndexError, AttributeError) as e:
         # print(f"Values missing Pose -> sample: {s_name}")
-        skip_frame = True
+        missed_pose = True
 
     try:
         # Right Shoulder
@@ -240,12 +260,13 @@ def sort_skeleton_data(results, point_cloud) -> MPPose :
         distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
                                 point_cloud_value[1] * point_cloud_value[1] +
                                 point_cloud_value[2] * point_cloud_value[2])
-        pose_keypoints[1, 2] = int(distance)
-        # keypoints_scores[1, 0] = float(
-        #     results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].visibility)
+        pose_keypoints[1, 2] = c_z = int(distance)
+        
+        hand_keypoints_list.append((c_x,c_y,c_z))
+
     except (IndexError, AttributeError) as e:
         # print(f"Values missing Pose -> sample: {s_name}")
-        skip_frame = True
+        missed_pose = True
 
     try:    
         # Right Elbow
@@ -258,12 +279,13 @@ def sort_skeleton_data(results, point_cloud) -> MPPose :
         distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
                                 point_cloud_value[1] * point_cloud_value[1] +
                                 point_cloud_value[2] * point_cloud_value[2])
-        pose_keypoints[2, 2] = int(distance)
-        # keypoints_scores[2, 0] = float(
-        #     results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].visibility)
+        pose_keypoints[2, 2] = c_z = int(distance)
+
+        hand_keypoints_list.append((c_x,c_y,c_z))
+
     except (IndexError, AttributeError) as e:
         # print(f"Values missing Pose -> sample: {s_name}")
-        skip_frame = True
+        missed_pose = True
         
     try:
         for i in range(21):
@@ -277,31 +299,197 @@ def sort_skeleton_data(results, point_cloud) -> MPPose :
             distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
                                 point_cloud_value[1] * point_cloud_value[1] +
                                 point_cloud_value[2] * point_cloud_value[2])
-            pose_keypoints[i+3, 2] = int(distance)
-            # made up number the hand model does not output visibility scores
-            # keypoints_scores[i+3, 0] = float(0.99)
+            pose_keypoints[i+3, 2] = c_z = int(distance)
+            
+            hand_keypoints_list.append((c_x,c_y,c_z))
+
     except (IndexError, AttributeError) as e:
         # print(f"Values missing Pose -> sample: {s_name}")
-        skip_frame = True
-    pose = MPPose(pose_keypoints, -1)
-    return pose
+        missed_hand = True
 
+    pose = MPPose(pose_keypoints, -1)
+
+    if not missed_hand:
+        mean_x = sum(coord[0] for coord in hand_keypoints_list) / len(hand_keypoints_list)
+        mean_y = sum(coord[1] for coord in hand_keypoints_list) / len(hand_keypoints_list)
+        mean_z = sum(coord[2] for coord in hand_keypoints_list) / len(hand_keypoints_list)
+
+    # Center point or midpoint of the hand in 3D space
+    hand_center_point = (mean_x, mean_y, mean_z)
+
+    return pose, hand_center_point,missed_pose, missed_hand
+
+def getOrientation(img):
+
+  img_spliced = img[500:1000,200:1650]
+  #cv22.imshow('Input Image', img)
+
+  # Convert image to grayscale
+  gray = cv2.cvtColor(img_spliced, cv2.COLOR_BGR2GRAY)
+  #cv22.imshow('Image', gray)
+  
+  # Convert image to binary
+  _, bw = thresholded = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU) #cv22.threshold(gray, 20, 200, cv22.THRESH_TOZERO_INV)#
+ 
+  # Find all the contours in the thresholded image
+  contours, _ = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE, offset=(200,500))
+  no_contours_detected = False
+  filtered_countours = []
+  for i, c in enumerate(contours):
+ 
+    # Calculate the area of each contour
+    area = cv2.contourArea(c)
+   # Ignore contours that are too small or too large
+    rect= cv2.minAreaRect(c)
+    box = cv2.boxPoints(rect)
+    box = np.intp(box)
+    
+    center = (int(rect[0][0]),int(rect[0][1])) 
+    width = int(rect[1][0])
+    height = int(rect[1][1])
+
+    x,y = center[0], center[1]
+
+    # Ignore contours that are too small or too large
+    if area < 4000 or 100000 < area or x < 400 or x > 1500 or y > 750 or y < 580 or width > 100:
+      continue
+    else:
+      print(width)
+      filtered_countours.append(c)
+      #print(x,y)
+  #print(len(filtered_countours))
+  if len(filtered_countours) == 0:
+     no_contours_detected = True
+     angle = center = top_point = -1
+     return angle, center, top_point, filtered_countours, no_contours_detected
+
+  rect = cv2.minAreaRect(filtered_countours[0])
+
+  # Retrieve the key parameters of the rotated bounding box
+  center = (int(rect[0][0]),int(rect[0][1])) 
+  width = int(rect[1][0])
+  height = int(rect[1][1])
+  center_x = center[0]
+  center_y = center[1]
+  half_width = width / 2
+  half_height = height / 2
+  angle = int(rect[2])
+  angle_deg = np.deg2rad(angle)
+
+  # Calculate coordinates of the end points
+  x1 = (center_x - half_width * cos(angle_deg) - half_height * sin(angle_deg))
+  y1 = (center_y - half_width * sin(angle_deg) + half_height * cos(angle_deg))
+
+  x2 = (center_x + half_width * cos(angle_deg) - half_height * sin(angle_deg))
+  y2 = (center_y + half_width * sin(angle_deg) + half_height * cos(angle_deg))
+
+  x3 = (center_x + half_width * cos(angle_deg) + half_height * sin(angle_deg))
+  y3 = (center_y + half_width * sin(angle_deg) - half_height * cos(angle_deg))
+
+  x4 = (center_x - half_width * cos(angle_deg) + half_height * sin(angle_deg))
+  y4 = (center_y - half_width * sin(angle_deg) - half_height * cos(angle_deg))
+
+  middle_point1 = (int((x1 + x2) / 2), int((y1 + y2) / 2))
+  middle_point2 = (int((x2 + x3) / 2), int((y2 + y3) / 2))
+  middle_point3 = (int((x3 + x4) / 2), int((y3 + y4) / 2))
+  middle_point4 = (int((x4 + x1) / 2), int((y4 + y1) / 2))
+
+  angle_original = angle
+  if width < height:
+    angle = 90 - angle
+  else:
+    angle = -angle
+  
+  top_point = middle_point1
+  if middle_point2[1] < top_point[1]:
+    top_point = middle_point2
+  if middle_point3[1] < top_point[1]:
+    top_point = middle_point3
+  if middle_point4[1] < top_point[1]:
+    top_point = middle_point4
+
+  return angle, center, top_point, filtered_countours, no_contours_detected
+
+def getDistance(point1, point2):
+ d = math.sqrt((point2[0] - point1[0])**2 +
+              (point2[1] - point1[1])**2)
+              #(point2[2] - point1[2])**2)
+ return d
+
+def getObj3dCoords(object_center, object_edge, point_cloud):
+   
+  err, point_cloud_value = point_cloud.get_value(object_edge[0], object_edge[1])
+  object_edge_distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
+                        point_cloud_value[1] * point_cloud_value[1] +
+                        point_cloud_value[2] * point_cloud_value[2])
+  
+  err, point_cloud_value = point_cloud.get_value(object_center[0], object_center[1])
+  object_center_distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
+                        point_cloud_value[1] * point_cloud_value[1] +
+                        point_cloud_value[2] * point_cloud_value[2])
+  
+  return (object_edge[0], object_edge[1], int(object_edge_distance)), (object_center[0], object_center[1], object_center_distance)
+
+def drawContours(img, contours, center, top_point):
+    # Draw each contour only for visualisation purposes
+  rect = cv2.minAreaRect(contours[0])
+  box = cv2.boxPoints(rect)
+  box = np.intp(box)
+
+  cv2.drawContours(img,[box],-1,(0,0,255),2)
+  
+  cv2.circle(img, (center[0], center[1]), 5, (0,255,0), -1)
+  #cv22.circle(img, middle_point1, 5, (255, 0, 0), -1)  # Red circle at end point 1
+  cv2.circle(img, (top_point[0], top_point[1]), 5, (0, 255, 0), -1)  # Red circle at end point 2
+
+  return img
+
+def checkNewContoursArea(new_contours, old_contours):
+   
+    if cv2.contourArea(new_contours[0]) != cv2.contourArea[old_contours[0]]:
+       return False
+    else:
+       return True
+
+def getBiggestContours(list_contours): #list_contours[(old_no_contours_detected, old_contours, old_obj_center_point, old_obj_edge_point)]
+   
+    biggest_contour = None
+    center = None
+    edge = None
+    found_contour = False
+
+    #cycle the list and find the biggest contour
+    for item in list_contours:
+      if not item[0]:
+         found_contour = True
+         if biggest_contour is None:
+            biggest_contour = item[1]
+            center = item[2]
+            edge = item[3]
+            continue
+         new_area = cv2.contourArea(item[1][0])
+         old_area = cv2.contourArea(biggest_contour[0])
+         div = new_area/old_area
+         if  div <=  1.03 * old_area and div >= 0.97 * old_area:
+            #print(cv2.contourArea(item[1][0]),cv2.contourArea(biggest_contour[0]))
+            biggest_contour = item[1]
+            center = item[2]
+            edge = item[3]
+
+    return biggest_contour, center, edge, found_contour
+         
+         
 if __name__ == '__main__':
 
     # Action classifier
-    if METHOD == 'tagcn':
-        action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom',
-                                                     in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=6, num_person=1)
-    else:
-        print("ERROR! MODEL NOT IMPLEMENTED")
-        exit()
-        # action_classifier = SpatioTemporalGCNLearner(device=device, dataset_name='nturgbd_cv', method_name=args.method,
-        #                                              in_channels=2, num_point=18, graph_type='openpose')
+    
+    action_classifier = SpatioTemporalGCNLearner(device='cuda', dataset_name='custom', method_name=METHOD,
+                                                 in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=4, num_person=1)
 
     print('print_numpoints', action_classifier.num_point)
 
-    model_saved_path = Path(__file__).parent / 'models' / 'GOOD_MODELS' / str(MODEL_TO_TEST) / 'model'
-    action_classifier.load(model_saved_path, str(MODEL_TO_TEST.split('_DEARLORD')[0]), verbose=True)
+    model_saved_path = Path(__file__).parent / 'models' / 'final_v2' / str(MODEL_TO_TEST) / 'model'
+    action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
 
     #action_classifier.optimize()
 
@@ -335,13 +523,27 @@ if __name__ == '__main__':
     svo_image = sl.Mat()
     point_cloud = sl.Mat()
     cnt = 0
-    
+    list_contours = []
+    missed_hand = False
+    hand_center_point = None
+    # if zed.grab(rt_param) == sl.ERROR_CODE.SUCCESS :
+    #    zed.retrieve_image(svo_image)
+    #    zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
+       
     while True:
         if zed.grab(rt_param) == sl.ERROR_CODE.SUCCESS :
+            start_time = time.perf_counter()
             zed.retrieve_image(svo_image) #cam.retrieve_image(svo_image, sl.VIEW.SIDE_BY_SIDE)
             zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
 
             img_rgb = cv2.cvtColor(svo_image.get_data(), cv2.COLOR_BGRA2RGB)
+
+            angle, obj_center_point, obj_edge_point, contours, no_contours_detected = getOrientation(svo_image.get_data())
+            if not no_contours_detected: 
+                obj_edge_point, obj_center_point = getObj3dCoords(obj_center_point, obj_edge_point, point_cloud)
+                list_contours.append((no_contours_detected, contours, obj_center_point, obj_edge_point))
+                if len(list_contours) > TARGET_FRAMES:
+                   list_contours.pop(0)
             
             #if f_ind % window == 0:
             start_time = time.perf_counter()
@@ -349,35 +551,56 @@ if __name__ == '__main__':
             
             results = detector.process(img_rgb)
 
-            annotated_bgr_image = draw_skeletons(img_rgb, results)
-            pose = sort_skeleton_data(results, point_cloud)
+            pose, hand_center_point, missed_pose, missed_hand = sort_skeleton_data(results, point_cloud)
             counter += 1
             poses_list.append(pose)
 
-            # if counter > (TARGET_FRAMES): #if more than 150 frames 
-            #     poses_list.pop(0)
-            #     counter = TARGET_FRAMES
-            # if counter > 0:
-            #     skeleton_seq = pose2numpy(counter, poses_list,3)
-            #     print(skeleton_seq.shape)
-            #     prediction = action_classifier.infer(skeleton_seq)
-            #     category_labels = preds2label(prediction.confidence)
-            #     print(category_labels)
-            #     draw_preds(annotated_bgr_image, category_labels)
+            if counter > (TARGET_FRAMES): #if more than 150 frames 
+                poses_list.pop(0)
+                counter = TARGET_FRAMES
+            if counter > 0:
+                skeleton_seq = pose2numpy(counter, poses_list,3)
+                #print(skeleton_seq.shape)
+                prediction = action_classifier.infer(skeleton_seq)
+                category_labels = preds2label(prediction.confidence)
+                print(category_labels)
 
+            first_key = next(iter(category_labels))
+            first_value = category_labels[first_key]
+
+            if first_key == 'grab':
+                contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
+                if found_contour:
+                    d_hand_objCenter = getDistance(hand_center_point, obj_center_point)
+                    d_hand_objEdge = getDistance(hand_center_point, obj_edge_point)
+                    print(obj_center_point)
+                    print(obj_edge_point)
+                    print(hand_center_point)
+                    if d_hand_objCenter < d_hand_objEdge:
+                        new_action = 'middle_grab'
+                        #print('middle graba-mos')
+                    else:
+                        new_action = 'edge_grab'
+                        #print('so a pontinha')
+
+                    #Update predicted labels dictionary
+                    category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
+            #contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
+            annotated_bgr_image = draw_skeletons(img_rgb, results, contours, obj_center_point, obj_edge_point)
+            draw_preds(annotated_bgr_image, category_labels)
             # # Calculate a running average on FPS
-            # end_time = time.perf_counter()
-            # fps = 1.0 / (end_time - start_time)
-            # avg_fps = 0.8 * fps + 0.2 * fps
-            # # Wait a few frames for FPS to stabilize
-            # if counter > 5:
-            #     annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (avg_fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
-            #                       1, (255, 0, 0), 2, cv2.LINE_AA)
+            end_time = time.perf_counter()
+            fps = 1.0 / (end_time - start_time)
+            annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
+                                1, (255, 0, 0), 2, cv2.LINE_AA)
             cv2.imshow('Result', annotated_bgr_image)
-            f_ind += 1
+            #print(counter)
+            
+            #f_ind += 1
             key = cv2.waitKey(100)
             if key == ord('q'):
                 break
+        
 
-    print("Average inference fps: ", avg_fps)
+    #print("Average inference fps: ", avg_fps)
     cv2.destroyAllWindows()
