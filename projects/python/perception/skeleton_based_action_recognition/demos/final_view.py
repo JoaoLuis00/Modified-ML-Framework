@@ -41,21 +41,23 @@ mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
 video_folder_path = '/home/joao/Zed'
-svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/approach_31' + '.svo'))
+svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/request_1' + '.svo'))
 
 TARGET_FRAMES = 300
 NUM_KEYPOINTS = 24
 MODEL_TO_TEST = 'stgcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
-#MODEL_TO_TEST = 'tagcn_23epochs_0.1lr_150subframes_dropafterepoch5060_batch10'
 #MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15'
 #MODEL_TO_TEST = 'tagcn_54epochs_0.1lr_125subframes_dropafterepoch5060_batch15'
+#MODEL_TO_TEST = 'tagcn_23epochs_0.1lr_150subframes_dropafterepoch5060_batch10'
+#MODEL_TO_TEST = 'tagcn_52epochs_0.1lr_175subframes_dropafterepoch5060_batch15'
 
 if MODEL_TO_TEST.split('_')[0] == 'tagcn':
     METHOD = 'tagcn'
 else:
     METHOD = 'stgcn'
-
 #torch1.9.0+cu111
+
+ACTION_CLASSES = pd.read_csv(os.path.join(Path(__file__).parent,'custom_labels.csv'), verbose=True, index_col=0).to_dict()["name"]
 
 class VideoReader(object):
     
@@ -80,6 +82,7 @@ class VideoReader(object):
 
     def __iter__(self):
         status = self.cam.open(self.init_params)
+        #self.cam.set_svo_position(10)
         if status != sl.ERROR_CODE.SUCCESS:
             print(repr(status))
             exit(1)
@@ -89,7 +92,7 @@ class VideoReader(object):
         if self.cam.grab(self.rt_param) != sl.ERROR_CODE.SUCCESS:
             raise StopIteration
         
-        print('Grabbing frame...')
+        #print('Grabbing frame...')
         if self.cam.grab(self.rt_param) != sl.ERROR_CODE.SUCCESS:
          print("Error grabbing frames.")
          return None, None
@@ -99,6 +102,7 @@ class VideoReader(object):
         if self.cam.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA) != sl.ERROR_CODE.SUCCESS or \
         self.cam.retrieve_image(left_image, sl.VIEW.LEFT) != sl.ERROR_CODE.SUCCESS:
          print("Error retrieving frame data.")
+         raise StopIteration
          return None, None
         
         # Convert the image format and point cloud data
@@ -110,8 +114,7 @@ class VideoReader(object):
         point_cloud.free()
         
         return rgb_image, point_cloud_data
-        return cv2.cvtColor(left_image, cv2.COLOR_BGRA2RGB), point_cloud #returns rgb image to send to mediapipe
-
+        #return cv2.cvtColor(left_image, cv2.COLOR_BGRA2RGB), point_cloud #returns rgb image to send to mediapipe
 
 def tile(a, dim, n_tile):
     a = torch.from_numpy(a)
@@ -123,18 +126,6 @@ def tile(a, dim, n_tile):
         [init_dim * np.arange(n_tile) + i for i in range(init_dim)]))
     tiled_a = torch.index_select(a, dim, order_index)
     return tiled_a.numpy()
-
-def np_tile(a, dim, n_tile):
-    # Get the shape of the input array
-    shape = list(a.shape)
-    # Insert 1 in the shape to represent the dimension to be tiled
-    shape.insert(dim, 1)
-    # Use np.tile to repeat the array along the specified dimension
-    tiled_a = np.tile(a[:, np.newaxis, ...], (1, n_tile) + tuple(shape))
-    # Use np.squeeze to remove singleton dimensions
-    tiled_a = np.squeeze(tiled_a, axis=dim + 1)
-    return tiled_a
-
 
 def pose2numpy(num_frames, poses_list, num_channels=4):
     C = num_channels
@@ -167,7 +158,6 @@ def pose2numpy(num_frames, poses_list, num_channels=4):
 
     return skeleton_seq
 
-
 def select_2_poses(poses):
     selected_poses = []
     energy = []
@@ -180,15 +170,11 @@ def select_2_poses(poses):
         selected_poses.append(poses[index[i]])
     return selected_poses
 
-ACTION_CLASSES = pd.read_csv(os.path.join(Path(__file__).parent,'custom_labels.csv'), verbose=True, index_col=0).to_dict()["name"]
-
-
 def preds2label(confidence):
     k = 3
     class_scores, class_inds = torch.topk(confidence, k=k)
     labels = {ACTION_CLASSES[int(class_inds[j])]: float(class_scores[j].item())for j in range(k)}
     return labels
-
 
 def draw_preds(frame, preds: Dict):
     for i, (cls, prob) in enumerate(preds.items()):
@@ -241,9 +227,7 @@ def sort_skeleton_data(results, point_cloud):
                                 point_cloud_value[1] * point_cloud_value[1] +
                                 point_cloud_value[2] * point_cloud_value[2])
 
-        pose_keypoints[0, 2] = c_z = int(distance)
-        
-        hand_keypoints_list.append((c_x,c_y,c_z))
+        pose_keypoints[0, 2] = int(distance)
 
     except (IndexError, AttributeError) as e:
         # print(f"Values missing Pose -> sample: {s_name}")
@@ -260,9 +244,7 @@ def sort_skeleton_data(results, point_cloud):
         distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
                                 point_cloud_value[1] * point_cloud_value[1] +
                                 point_cloud_value[2] * point_cloud_value[2])
-        pose_keypoints[1, 2] = c_z = int(distance)
-        
-        hand_keypoints_list.append((c_x,c_y,c_z))
+        pose_keypoints[1, 2] = int(distance)
 
     except (IndexError, AttributeError) as e:
         # print(f"Values missing Pose -> sample: {s_name}")
@@ -270,18 +252,16 @@ def sort_skeleton_data(results, point_cloud):
 
     try:    
         # Right Elbow
-        pose_keypoints[2, 0] = c_x = int(
+        pose_keypoints[2, 0] = int(
             results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].x * 1920)
-        pose_keypoints[2, 1] = c_y = int(
+        pose_keypoints[2, 1] = int(
             results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].y * 1080)
 
         err, point_cloud_value = point_cloud.get_value(c_x, c_y)
         distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
                                 point_cloud_value[1] * point_cloud_value[1] +
                                 point_cloud_value[2] * point_cloud_value[2])
-        pose_keypoints[2, 2] = c_z = int(distance)
-
-        hand_keypoints_list.append((c_x,c_y,c_z))
+        pose_keypoints[2, 2] = int(distance)
 
     except (IndexError, AttributeError) as e:
         # print(f"Values missing Pose -> sample: {s_name}")
@@ -290,16 +270,17 @@ def sort_skeleton_data(results, point_cloud):
     try:
         for i in range(21):
             # Right Hand
-            pose_keypoints[i+3, 0] = c_x = int(
+            pose_keypoints[i+3, 0] = int(
                 results.right_hand_landmarks.landmark[i].x * 1920)
-            pose_keypoints[i+3, 1] = c_y = int(
+            pose_keypoints[i+3, 1] = int(
                 results.right_hand_landmarks.landmark[i].y * 1080)
 
             err, point_cloud_value = point_cloud.get_value(c_x, c_y)
             distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
                                 point_cloud_value[1] * point_cloud_value[1] +
                                 point_cloud_value[2] * point_cloud_value[2])
-            pose_keypoints[i+3, 2] = c_z = int(distance)
+            pose_keypoints[i+3, 2] = int(distance)
+            c_z = int(distance)
             
             hand_keypoints_list.append((c_x,c_y,c_z))
 
@@ -411,10 +392,11 @@ def getOrientation(img):
   return angle, center, top_point, filtered_countours, no_contours_detected
 
 def getDistance(point1, point2):
- d = math.sqrt((point2[0] - point1[0])**2 +
-              (point2[1] - point1[1])**2)
-              #(point2[2] - point1[2])**2)
- return d
+ 
+    d = math.sqrt((point2[0] - point1[0])**2 +
+                (point2[1] - point1[1])**2)
+                #(point2[2] - point1[2])**2)
+    return d
 
 def getObj3dCoords(object_center, object_edge, point_cloud):
    
@@ -483,10 +465,8 @@ if __name__ == '__main__':
 
     # Action classifier
     
-    action_classifier = SpatioTemporalGCNLearner(device='cuda', dataset_name='custom', method_name=METHOD,
+    action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom', method_name=METHOD,
                                                  in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=4, num_person=1)
-
-    print('print_numpoints', action_classifier.num_point)
 
     model_saved_path = Path(__file__).parent / 'models' / 'final_v2' / str(MODEL_TO_TEST) / 'model'
     action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
@@ -497,53 +477,28 @@ if __name__ == '__main__':
 
     counter, avg_fps = 0, 0
     poses_list = []
-    window = int(30)
+    window = 1
     f_ind = 0
-    detector = mp_holistic.Holistic(min_detection_confidence=0.4, min_tracking_confidence=0.4, model_complexity = 2)
+    detector = mp_holistic.Holistic(min_detection_confidence=0.3, min_tracking_confidence=0.3, model_complexity = 1)
 
-    init_params = sl.InitParameters()
-    init_params.svo_real_time_mode = False  # Convert in realtime
-    init_params.coordinate_units = sl.UNIT.MILLIMETER  # Use milliliter units (for depth measurements)
-
-    rt_param = sl.RuntimeParameters()
-
-    rt_param.enable_fill_mode = True
-    
-    # Create a Camera object
-    zed = sl.Camera()
-    
-    #Update path to the next svo file
-    init_params.set_from_svo_file(f"{svo_path}")
-    
-    # Open the camera
-    err = zed.open(init_params)
-    if err != sl.ERROR_CODE.SUCCESS:
-        exit(1)
-    
-    svo_image = sl.Mat()
-    point_cloud = sl.Mat()
-    cnt = 0
     list_contours = []
     missed_hand = False
     hand_center_point = None
-    # if zed.grab(rt_param) == sl.ERROR_CODE.SUCCESS :
-    #    zed.retrieve_image(svo_image)
-    #    zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
        
-    while True:
-        if zed.grab(rt_param) == sl.ERROR_CODE.SUCCESS :
+    for img_rgb, point_cloud in image_provider:
+        if f_ind % window == 0:
             start_time = time.perf_counter()
-            zed.retrieve_image(svo_image) #cam.retrieve_image(svo_image, sl.VIEW.SIDE_BY_SIDE)
-            zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
+            # zed.retrieve_image(svo_image)
+            # zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
 
-            img_rgb = cv2.cvtColor(svo_image.get_data(), cv2.COLOR_BGRA2RGB)
+            # img_rgb = cv2.cvtColor(svo_image.get_data(), cv2.COLOR_BGRA2RGB)
 
-            angle, obj_center_point, obj_edge_point, contours, no_contours_detected = getOrientation(svo_image.get_data())
+            angle, obj_center_point, obj_edge_point, contours, no_contours_detected = getOrientation(cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
             if not no_contours_detected: 
                 obj_edge_point, obj_center_point = getObj3dCoords(obj_center_point, obj_edge_point, point_cloud)
                 list_contours.append((no_contours_detected, contours, obj_center_point, obj_edge_point))
                 if len(list_contours) > TARGET_FRAMES:
-                   list_contours.pop(0)
+                    list_contours.pop(0)
             
             #if f_ind % window == 0:
             start_time = time.perf_counter()
@@ -555,9 +510,9 @@ if __name__ == '__main__':
             counter += 1
             poses_list.append(pose)
 
-            if counter > (TARGET_FRAMES): #if more than 150 frames 
+            if counter > (TARGET_FRAMES/2): #if more than 300 frames 
                 poses_list.pop(0)
-                counter = TARGET_FRAMES
+                counter = TARGET_FRAMES/2
             if counter > 0:
                 skeleton_seq = pose2numpy(counter, poses_list,3)
                 #print(skeleton_seq.shape)
@@ -573,15 +528,13 @@ if __name__ == '__main__':
                 if found_contour:
                     d_hand_objCenter = getDistance(hand_center_point, obj_center_point)
                     d_hand_objEdge = getDistance(hand_center_point, obj_edge_point)
-                    print(obj_center_point)
-                    print(obj_edge_point)
-                    print(hand_center_point)
+                    # print(obj_center_point)
+                    # print(obj_edge_point)
+                    # print(hand_center_point)
                     if d_hand_objCenter < d_hand_objEdge:
                         new_action = 'middle_grab'
-                        #print('middle graba-mos')
                     else:
                         new_action = 'edge_grab'
-                        #print('so a pontinha')
 
                     #Update predicted labels dictionary
                     category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
@@ -591,15 +544,15 @@ if __name__ == '__main__':
             # # Calculate a running average on FPS
             end_time = time.perf_counter()
             fps = 1.0 / (end_time - start_time)
-            annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
+            avg_fps = 0.8 * fps + 0.2 * fps
+            if counter > 5:
+                annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
                                 1, (255, 0, 0), 2, cv2.LINE_AA)
             cv2.imshow('Result', annotated_bgr_image)
-            #print(counter)
-            
-            #f_ind += 1
-            key = cv2.waitKey(100)
-            if key == ord('q'):
-                break
+        f_ind += 1
+        key = cv2.waitKey(1)
+        if key == ord('q'):
+            break
         
 
     #print("Average inference fps: ", avg_fps)

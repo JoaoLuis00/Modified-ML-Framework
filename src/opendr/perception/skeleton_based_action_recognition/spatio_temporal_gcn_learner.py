@@ -533,7 +533,6 @@ class SpatioTemporalGCNLearner(Learner):
         else:
             output = output
         m = nn.Softmax(dim=0)
-        #print(output)
         softmax_predictions = m(output.data[0])
         class_ind = int(torch.argmax(softmax_predictions))
         class_description = self.classes_dict[class_ind]

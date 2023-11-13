@@ -18,11 +18,15 @@ from opendr.perception.skeleton_based_action_recognition import SpatioTemporalGC
 
 TARGET_FRAMES = 300
 NUM_KEYPOINTS = 24
-METHOD = 'tagcn'
+
 #MODEL_TO_TEST = 'stgcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
 MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15' #mais melhor bom
 #MODEL_TO_TEST = 'tagcn_54epochs_0.1lr_125subframes_dropafterepoch5060_batch15'
 
+if MODEL_TO_TEST.split('_')[0] == 'tagcn':
+    METHOD = 'tagcn'
+else:
+    METHOD = 'stgcn'
 
 ACTION_CLASSES = pd.read_csv(os.path.join(Path(__file__).parent,'custom_labels.csv'), verbose=True, index_col=0).to_dict()["name"]
 
@@ -44,13 +48,28 @@ action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
 
 load_data = np.load(str(Path(__file__).parent / 'data' / "final_v2/val_joints.npy"), allow_pickle=True)
 
-one_sample = load_data[0,...]
+one_sample = load_data[32,:,7:157,...]
 
-sample_npy = np.zeros((1,3,300,24,1))
+def tile(a, dim, n_tile):
+    a = torch.from_numpy(a)
+    init_dim = a.size(dim)
+    repeat_idx = [1] * a.dim()
+    repeat_idx[dim] = n_tile
+    a = a.repeat(*repeat_idx)
+    order_index = torch.LongTensor(np.concatenate(
+        [init_dim * np.arange(n_tile) + i for i in range(init_dim)]))
+    tiled_a = torch.index_select(a, dim, order_index)
+    return tiled_a.numpy()
+
+num_tiles = int(150 / 150)
+
+sample_npy = np.zeros((1,3,150,24,1))
 
 sample_npy[0,:,:,:,:] = one_sample
 
-prediction = action_classifier.infer(sample_npy)
+one_sample = tile(sample_npy, 2, num_tiles+1)
+
+prediction = action_classifier.infer(one_sample)
 
 category_labels = preds2label(prediction.confidence)
 
