@@ -218,6 +218,7 @@ if __name__ == '__main__':
             end_time = time.perf_counter()
             fps = 1.0 / (end_time - start_time)
             avg_fps = 0.8 * fps + 0.2 * fps
+            
             # Wait a few frames for FPS to stabilize
             if counter > 5:
                 img = cv2.putText(img, "FPS: %.2f" % (avg_fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,

@@ -10,14 +10,14 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-epochs = 100
+epochs = 70
 lr = 0.1
-subframes = 150
+subframes = 100
 
-datatype = 'final_v2'
+datatype = 'sides'
 #datatype = 'modified_val_data/augmented_data_noise'
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch6070_batch15"
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch5060_batch15"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
@@ -32,7 +32,7 @@ def main():
         num_frames=300,
         num_point=KEYPOINTS,
         dataset_name="custom",
-        num_class=4,
+        num_class=11,
         graph_type="custom",
         device="cuda",
         checkpoint_after_iter=10,
@@ -46,7 +46,7 @@ def main():
         num_subframes=subframes,
         experiment_name=experiment_name,
         temp_path = str(tmp_path),
-        drop_after_epoch=[60,70]
+        drop_after_epoch=[50,60]
     )
 
     folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)

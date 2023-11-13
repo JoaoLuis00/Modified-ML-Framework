@@ -20,8 +20,9 @@ TARGET_FRAMES = 300
 NUM_KEYPOINTS = 24
 
 #MODEL_TO_TEST = 'stgcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
-MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15' #mais melhor bom
+#MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15' #mais melhor bom
 #MODEL_TO_TEST = 'tagcn_54epochs_0.1lr_125subframes_dropafterepoch5060_batch15'
+MODEL_TO_TEST = 'tagcn_70epochs_0.1lr_100subframes_dropafterepoch5060_batch15'
 
 if MODEL_TO_TEST.split('_')[0] == 'tagcn':
     METHOD = 'tagcn'
@@ -39,16 +40,16 @@ def preds2label(confidence):
 
 
 action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom', method_name=METHOD,
-                                            in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=4, num_person=1)
+                                            in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=11, num_person=1)
 
 print('print_numpoints', action_classifier.num_point)
 
-model_saved_path = Path(__file__).parent / 'models' / 'final_v2' / str(MODEL_TO_TEST) / 'model'
+model_saved_path = Path(__file__).parent / 'models' / 'sides' / str(MODEL_TO_TEST) / 'model'
 action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
 
 load_data = np.load(str(Path(__file__).parent / 'data' / "final_v2/val_joints.npy"), allow_pickle=True)
 
-one_sample = load_data[32,:,7:157,...]
+one_sample = load_data[32,...]
 
 def tile(a, dim, n_tile):
     a = torch.from_numpy(a)
@@ -63,13 +64,13 @@ def tile(a, dim, n_tile):
 
 num_tiles = int(150 / 150)
 
-sample_npy = np.zeros((1,3,150,24,1))
+sample_npy = np.zeros((1,3,300,24,1))
 
 sample_npy[0,:,:,:,:] = one_sample
 
-one_sample = tile(sample_npy, 2, num_tiles+1)
+#one_sample = tile(sample_npy, 2, num_tiles+1)
 
-prediction = action_classifier.infer(one_sample)
+prediction = action_classifier.infer(sample_npy)
 
 category_labels = preds2label(prediction.confidence)
 
