@@ -1,0 +1,3 @@
+tensor(0),0,7
+tensor(6),8,2
+tensor(23),5,1

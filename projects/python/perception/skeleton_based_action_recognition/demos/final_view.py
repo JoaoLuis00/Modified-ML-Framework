@@ -41,17 +41,20 @@ mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
 video_folder_path = '/home/joao/Zed'
-svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/request_1' + '.svo'))
+svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/approach_10' + '.svo'))
 
-TARGET_FRAMES = 300
+TARGET_FRAMES = 200
 NUM_KEYPOINTS = 24
 #MODEL_TO_TEST = 'stgcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
 #MODEL_TO_TEST = 'tagcn_35epochs_0.1lr_100subframes_dropafterepoch5060_batch15'
 #MODEL_TO_TEST = 'tagcn_54epochs_0.1lr_125subframes_dropafterepoch5060_batch15'
 #MODEL_TO_TEST = 'tagcn_23epochs_0.1lr_150subframes_dropafterepoch5060_batch10'
 #MODEL_TO_TEST = 'tagcn_52epochs_0.1lr_175subframes_dropafterepoch5060_batch15'
-MODEL_TO_TEST = 'tagcn_70epochs_0.1lr_100subframes_dropafterepoch5060_batch15'
+#MODEL_TO_TEST = 'tagcn_70epochs_0.1lr_100subframes_dropafterepoch5060_batch61'
 
+
+#MODEL_TO_TEST = 'tagcn_50epochs_0.1lr_100subframes_dropafterepoch5060_batch15'
+MODEL_TO_TEST = 'tagcn_50epochs_0.1lr_75subframes_dropafterepoch3040_batch15'
 
 if MODEL_TO_TEST.split('_')[0] == 'tagcn':
     METHOD = 'tagcn'
@@ -94,28 +97,22 @@ class VideoReader(object):
         if self.cam.grab(self.rt_param) != sl.ERROR_CODE.SUCCESS:
             raise StopIteration
         
-        #print('Grabbing frame...')
-        if self.cam.grab(self.rt_param) != sl.ERROR_CODE.SUCCESS:
-         print("Error grabbing frames.")
-         return None, None
-        
         left_image = sl.Mat()
         point_cloud = sl.Mat()
         if self.cam.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA) != sl.ERROR_CODE.SUCCESS or \
         self.cam.retrieve_image(left_image, sl.VIEW.LEFT) != sl.ERROR_CODE.SUCCESS:
          print("Error retrieving frame data.")
          raise StopIteration
-         return None, None
         
         # Convert the image format and point cloud data
         rgb_image = cv2.cvtColor(left_image.get_data(), cv2.COLOR_BGRA2RGB)
-        point_cloud_data = point_cloud.get_data()
+        #point_cloud_data = point_cloud
         
-        # Free the memory of the matrices
-        left_image.free()
-        point_cloud.free()
+        # # Free the memory of the matrices
+        # left_image.free()
+        # point_cloud.free()
         
-        return rgb_image, point_cloud_data
+        return rgb_image, point_cloud
         #return cv2.cvtColor(left_image, cv2.COLOR_BGRA2RGB), point_cloud #returns rgb image to send to mediapipe
 
 def tile(a, dim, n_tile):
@@ -135,30 +132,28 @@ def pose2numpy(num_frames, poses_list, num_channels=4):
     V = NUM_KEYPOINTS
     M = 1  # num_person_in
     data_numpy = np.zeros((1, C, num_frames, V, M))
-    skeleton_seq = np.zeros((1, C, T, V, M))
+    skeleton_seq = np.ones((1, C, T, V, M)) * -1
 
     for t in range(num_frames):
         data_numpy[0, 0:3, t, :, 0] = np.transpose(poses_list[t].data)
 
-    # if we have less than 75 frames, repeat frames to reach 75
     diff = T - num_frames
-    if diff != 0:
-        while diff > 0:
-            num_tiles = int(diff / num_frames)
-            if num_tiles > 0:
-                data_numpy = tile(data_numpy, data_numpy.shape[1], num_tiles+1)
-                num_frames = data_numpy.shape[2]
-                diff = T - num_frames
-            elif num_tiles == 0:
-                skeleton_seq[:, :, :num_frames, :, :] = data_numpy
-                for j in range(diff):
-                    skeleton_seq[:, :, num_frames+j, :,
-                                 :] = data_numpy[:, :, -1, :, :]
-            break
-    elif diff == 0:
+    if diff == 0:
         skeleton_seq = data_numpy
-
+    while diff > 0:
+        num_tiles = int(diff / num_frames)
+        if num_tiles > 0:
+            data_numpy = tile(data_numpy, 2, num_tiles+1)
+            num_frames = data_numpy.shape[2]
+            diff = T - num_frames
+        elif num_tiles == 0:
+            skeleton_seq[:, :, :num_frames, :, :] = data_numpy
+            for j in range(diff):
+                skeleton_seq[:, :, num_frames+j, :, :] = data_numpy[:, :, -1, :, :]
+            break
+    
     return skeleton_seq
+
 
 def select_2_poses(poses):
     selected_poses = []
@@ -185,15 +180,15 @@ def draw_preds(frame, preds: Dict):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, (0, 255, 255), 2,)
         
-def draw_skeletons(image, results, contours, obj_center_point, obj_edge_point):
+def draw_skeletons(image, results):#, contours, obj_center_point, obj_edge_point):
     # Draw landmark annotation on the image.
     image.flags.writeable = True
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-    try:
-        image = drawContours(image, contours, center=obj_center_point, top_point=obj_edge_point)
-    except (IndexError,TypeError):
-        pass
+    # try:
+    #     image = drawContours(image, contours, center=obj_center_point, top_point=obj_edge_point)
+    # except (IndexError,TypeError):
+    #     pass
     
     mp_drawing.draw_landmarks(
         image,
@@ -212,7 +207,7 @@ def draw_skeletons(image, results, contours, obj_center_point, obj_edge_point):
     return image
 
 def sort_skeleton_data(results, point_cloud):
-    pose_keypoints = np.ones((NUM_KEYPOINTS, 3), dtype=np.int32) * 0
+    pose_keypoints = np.ones((NUM_KEYPOINTS, 3), dtype=np.int32) * -1
     hand_keypoints_list = []
     missed_hand = missed_pose = False
     mean_x = mean_y = mean_z = -1
@@ -467,10 +462,10 @@ if __name__ == '__main__':
 
     # Action classifier
     
-    action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom', method_name=METHOD,
-                                                 in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=11, num_person=1)
+    action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom', method_name=METHOD, num_frames=TARGET_FRAMES,
+                                                 in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=9, num_person=1)
 
-    model_saved_path = Path(__file__).parent / 'models' / 'sides' / str(MODEL_TO_TEST) / 'model'
+    model_saved_path = Path(__file__).parent / 'models' / 'sides_200frames' / str(MODEL_TO_TEST) / 'model'
     action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
 
     #action_classifier.optimize()
@@ -490,19 +485,14 @@ if __name__ == '__main__':
     for img_rgb, point_cloud in image_provider:
         if f_ind % window == 0:
             start_time = time.perf_counter()
-            # zed.retrieve_image(svo_image)
-            # zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
 
-            # img_rgb = cv2.cvtColor(svo_image.get_data(), cv2.COLOR_BGRA2RGB)
+            # angle, obj_center_point, obj_edge_point, contours, no_contours_detected = getOrientation(cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
+            # if not no_contours_detected: 
+            #     obj_edge_point, obj_center_point = getObj3dCoords(obj_center_point, obj_edge_point, point_cloud)
+            #     list_contours.append((no_contours_detected, contours, obj_center_point, obj_edge_point))
+            #     if len(list_contours) > TARGET_FRAMES:
+            #         list_contours.pop(0)
 
-            angle, obj_center_point, obj_edge_point, contours, no_contours_detected = getOrientation(cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
-            if not no_contours_detected: 
-                obj_edge_point, obj_center_point = getObj3dCoords(obj_center_point, obj_edge_point, point_cloud)
-                list_contours.append((no_contours_detected, contours, obj_center_point, obj_edge_point))
-                if len(list_contours) > TARGET_FRAMES:
-                    list_contours.pop(0)
-            
-            #if f_ind % window == 0:
             start_time = time.perf_counter()
             img_rgb.flags.writeable = False
             
@@ -512,43 +502,48 @@ if __name__ == '__main__':
             counter += 1
             poses_list.append(pose)
 
-            if counter > (TARGET_FRAMES/2): #if more than 300 frames 
+            if counter > TARGET_FRAMES: #if more than x00 frames 
                 poses_list.pop(0)
-                counter = TARGET_FRAMES/2
+                counter = TARGET_FRAMES
             if counter > 0:
                 skeleton_seq = pose2numpy(counter, poses_list,3)
-                #print(skeleton_seq.shape)
                 prediction = action_classifier.infer(skeleton_seq)
                 category_labels = preds2label(prediction.confidence)
                 print(category_labels)
+            
 
-            first_key = next(iter(category_labels))
-            first_value = category_labels[first_key]
-
-            if first_key == 'grab':
-                contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
-                if found_contour:
-                    d_hand_objCenter = getDistance(hand_center_point, obj_center_point)
-                    d_hand_objEdge = getDistance(hand_center_point, obj_edge_point)
-                    # print(obj_center_point)
-                    # print(obj_edge_point)
-                    # print(hand_center_point)
-                    if d_hand_objCenter < d_hand_objEdge:
-                        new_action = 'middle_grab'
-                    else:
-                        new_action = 'edge_grab'
-
-                    #Update predicted labels dictionary
-                    category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
+            # TODO: alterar o codigo comentado para as novas labels
+            # first_key = next(iter(category_labels))
+            # first_value = category_labels[first_key]
+            
+            # if first_key == 'grab':
+            #     contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
+            #     if found_contour:
+            #         d_hand_objCenter = getDistance(hand_center_point, obj_center_point)
+            #         d_hand_objEdge = getDistance(hand_center_point, obj_edge_point)
+            #         # print(obj_center_point)
+            #         # print(obj_edge_point)
+            #         # print(hand_center_point)
+            #         if d_hand_objCenter < d_hand_objEdge:
+            #             new_action = 'middle_grab'
+            #         else:
+            #             new_action = 'edge_grab'
+            
+            #         #Update predicted labels dictionary
+            #         category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
             #contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
-            annotated_bgr_image = draw_skeletons(img_rgb, results, contours, obj_center_point, obj_edge_point)
+
+
+            annotated_bgr_image = draw_skeletons(img_rgb, results)
             draw_preds(annotated_bgr_image, category_labels)
+            
             # # Calculate a running average on FPS
             end_time = time.perf_counter()
             fps = 1.0 / (end_time - start_time)
             avg_fps = 0.8 * fps + 0.2 * fps
+            print(counter)
             if counter > 5:
-                annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
+                annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (avg_fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
                                 1, (255, 0, 0), 2, cv2.LINE_AA)
             cv2.imshow('Result', annotated_bgr_image)
         f_ind += 1

@@ -47,7 +47,7 @@ def main():
         lr=lr,
         drop_after_epoch=[50,60]
     )
-
+    
     folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)
 
     if not os.path.isdir(Path(__file__).parent/'models'/str(datatype)):

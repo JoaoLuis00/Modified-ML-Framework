@@ -10,14 +10,14 @@ from pathlib import Path
 
 KEYPOINTS = 24
 
-epochs = 60
-lr = 0.1
+epochs = 70
+lr = 0.01
 subframes = 100
 
-datatype = 'final_v2'
+datatype = 'sides'
 #datatype = 'modified_val_data/augmented_data_noise'
 
-experiment_name = f"stgcn_{epochs}epochs_{lr}lr_dropafterepoch5060_batch15"
+experiment_name = f"stgcn_{epochs}epochs_{lr}lr_dropafterepoch5060_batch61"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
@@ -32,12 +32,12 @@ def main():
         num_frames=300,
         num_point=KEYPOINTS,
         dataset_name="custom",
-        num_class=4,
+        num_class=9,
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=64, 
-        batch_size=20, 
+        batch_size=61, 
         epochs=epochs,
         in_channels=3,
         num_person=1,

@@ -184,7 +184,7 @@ if __name__ == '__main__':
         action_classifier.optimize()
 
     image_provider = VideoReader(args.video)  # loading a video or get the camera id 0
-
+    
     counter, avg_fps = 0, 0
     poses_list = []
     window = int(30/args.fps)

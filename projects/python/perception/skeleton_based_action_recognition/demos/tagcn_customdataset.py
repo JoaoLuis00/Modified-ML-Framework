@@ -11,10 +11,10 @@ from pathlib import Path
 KEYPOINTS = 24
 
 epochs = 70
-lr = 0.1
-subframes = 100
+lr = 0.01
+subframes = 50
 
-datatype = 'sides'
+datatype = 'sides_200frames'
 #datatype = 'modified_val_data/augmented_data_noise'
 
 experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch5060_batch15"
@@ -29,10 +29,10 @@ def main():
         # batch_size=args.batch_size,
         # backbone=args.backbone,
         num_workers=8,
-        num_frames=300,
+        num_frames=200,
         num_point=KEYPOINTS,
         dataset_name="custom",
-        num_class=11,
+        num_class=9,
         graph_type="custom",
         device="cuda",
         checkpoint_after_iter=10,

@@ -1,0 +1,354 @@
+[ Tue Nov 14 16:27:01 2023 ] Training epoch: 1
+[ Tue Nov 14 16:27:06 2023 ] 	 Mean training loss: 8.7118.
+[ Tue Nov 14 16:27:06 2023 ] 	 Time consumption: [Data]04%, [Network]95%
+[ Tue Nov 14 16:27:06 2023 ] Eval epoch: 1
+[ Tue Nov 14 16:27:07 2023 ] 	Mean val loss of 1 batches: 740.0625.
+[ Tue Nov 14 16:27:07 2023 ] 	Top1: 51.52%
+[ Tue Nov 14 16:27:07 2023 ] 	Top5: 63.64%
+[ Tue Nov 14 16:27:07 2023 ] Training epoch: 2
+[ Tue Nov 14 16:27:12 2023 ] 	 Mean training loss: 2.1674.
+[ Tue Nov 14 16:27:12 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:27:12 2023 ] Eval epoch: 2
+[ Tue Nov 14 16:27:13 2023 ] 	Mean val loss of 1 batches: 79.85546112060547.
+[ Tue Nov 14 16:27:13 2023 ] 	Top1: 54.55%
+[ Tue Nov 14 16:27:13 2023 ] 	Top5: 60.61%
+[ Tue Nov 14 16:27:13 2023 ] Training epoch: 3
+[ Tue Nov 14 16:27:18 2023 ] 	 Mean training loss: 1.3759.
+[ Tue Nov 14 16:27:18 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:27:18 2023 ] Eval epoch: 3
+[ Tue Nov 14 16:27:19 2023 ] 	Mean val loss of 1 batches: 7.401342391967773.
+[ Tue Nov 14 16:27:19 2023 ] 	Top1: 63.64%
+[ Tue Nov 14 16:27:19 2023 ] 	Top5: 93.94%
+[ Tue Nov 14 16:27:19 2023 ] Training epoch: 4
+[ Tue Nov 14 16:27:25 2023 ] 	 Mean training loss: 0.6208.
+[ Tue Nov 14 16:27:25 2023 ] 	 Time consumption: [Data]04%, [Network]96%
+[ Tue Nov 14 16:27:25 2023 ] Eval epoch: 4
+[ Tue Nov 14 16:27:26 2023 ] 	Mean val loss of 1 batches: 1.402888536453247.
+[ Tue Nov 14 16:27:26 2023 ] 	Top1: 81.82%
+[ Tue Nov 14 16:27:26 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:27:26 2023 ] Training epoch: 5
+[ Tue Nov 14 16:27:31 2023 ] 	 Mean training loss: 0.9281.
+[ Tue Nov 14 16:27:31 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:27:31 2023 ] Eval epoch: 5
+[ Tue Nov 14 16:27:32 2023 ] 	Mean val loss of 1 batches: 0.8909409642219543.
+[ Tue Nov 14 16:27:32 2023 ] 	Top1: 81.82%
+[ Tue Nov 14 16:27:32 2023 ] 	Top5: 96.97%
+[ Tue Nov 14 16:27:32 2023 ] Training epoch: 6
+[ Tue Nov 14 16:27:38 2023 ] 	 Mean training loss: 0.5151.
+[ Tue Nov 14 16:27:38 2023 ] 	 Time consumption: [Data]07%, [Network]93%
+[ Tue Nov 14 16:27:38 2023 ] Eval epoch: 6
+[ Tue Nov 14 16:27:39 2023 ] 	Mean val loss of 1 batches: 0.49340537190437317.
+[ Tue Nov 14 16:27:39 2023 ] 	Top1: 81.82%
+[ Tue Nov 14 16:27:39 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:27:39 2023 ] Training epoch: 7
+[ Tue Nov 14 16:27:44 2023 ] 	 Mean training loss: 0.4939.
+[ Tue Nov 14 16:27:44 2023 ] 	 Time consumption: [Data]05%, [Network]94%
+[ Tue Nov 14 16:27:44 2023 ] Eval epoch: 7
+[ Tue Nov 14 16:27:45 2023 ] 	Mean val loss of 1 batches: 0.4000846743583679.
+[ Tue Nov 14 16:27:45 2023 ] 	Top1: 87.88%
+[ Tue Nov 14 16:27:45 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:27:45 2023 ] Training epoch: 8
+[ Tue Nov 14 16:27:51 2023 ] 	 Mean training loss: 0.9850.
+[ Tue Nov 14 16:27:51 2023 ] 	 Time consumption: [Data]07%, [Network]93%
+[ Tue Nov 14 16:27:51 2023 ] Eval epoch: 8
+[ Tue Nov 14 16:27:52 2023 ] 	Mean val loss of 1 batches: 0.6006642580032349.
+[ Tue Nov 14 16:27:52 2023 ] 	Top1: 81.82%
+[ Tue Nov 14 16:27:52 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:27:52 2023 ] Training epoch: 9
+[ Tue Nov 14 16:27:58 2023 ] 	 Mean training loss: 0.7125.
+[ Tue Nov 14 16:27:58 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:27:58 2023 ] Eval epoch: 9
+[ Tue Nov 14 16:27:59 2023 ] 	Mean val loss of 1 batches: 0.3637831211090088.
+[ Tue Nov 14 16:27:59 2023 ] 	Top1: 87.88%
+[ Tue Nov 14 16:27:59 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:27:59 2023 ] Training epoch: 10
+[ Tue Nov 14 16:28:04 2023 ] 	 Mean training loss: 0.6495.
+[ Tue Nov 14 16:28:04 2023 ] 	 Time consumption: [Data]07%, [Network]93%
+[ Tue Nov 14 16:28:04 2023 ] Eval epoch: 10
+[ Tue Nov 14 16:28:05 2023 ] 	Mean val loss of 1 batches: 0.2813818156719208.
+[ Tue Nov 14 16:28:05 2023 ] 	Top1: 84.85%
+[ Tue Nov 14 16:28:05 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:28:05 2023 ] Training epoch: 11
+[ Tue Nov 14 16:28:11 2023 ] 	 Mean training loss: 0.6065.
+[ Tue Nov 14 16:28:11 2023 ] 	 Time consumption: [Data]07%, [Network]93%
+[ Tue Nov 14 16:28:11 2023 ] Eval epoch: 11
+[ Tue Nov 14 16:28:12 2023 ] 	Mean val loss of 1 batches: 0.27717384696006775.
+[ Tue Nov 14 16:28:12 2023 ] 	Top1: 93.94%
+[ Tue Nov 14 16:28:12 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:28:12 2023 ] Training epoch: 12
+[ Tue Nov 14 16:28:18 2023 ] 	 Mean training loss: 0.4796.
+[ Tue Nov 14 16:28:18 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:28:18 2023 ] Eval epoch: 12
+[ Tue Nov 14 16:28:19 2023 ] 	Mean val loss of 1 batches: 0.2763828635215759.
+[ Tue Nov 14 16:28:19 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:28:19 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:28:19 2023 ] Training epoch: 13
+[ Tue Nov 14 16:28:24 2023 ] 	 Mean training loss: 0.3217.
+[ Tue Nov 14 16:28:24 2023 ] 	 Time consumption: [Data]04%, [Network]96%
+[ Tue Nov 14 16:28:24 2023 ] Eval epoch: 13
+[ Tue Nov 14 16:28:25 2023 ] 	Mean val loss of 1 batches: 0.28292587399482727.
+[ Tue Nov 14 16:28:25 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:28:25 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:28:25 2023 ] Training epoch: 14
+[ Tue Nov 14 16:28:30 2023 ] 	 Mean training loss: 0.5177.
+[ Tue Nov 14 16:28:30 2023 ] 	 Time consumption: [Data]04%, [Network]95%
+[ Tue Nov 14 16:28:30 2023 ] Eval epoch: 14
+[ Tue Nov 14 16:28:31 2023 ] 	Mean val loss of 1 batches: 0.2981089651584625.
+[ Tue Nov 14 16:28:31 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:28:31 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:28:31 2023 ] Training epoch: 15
+[ Tue Nov 14 16:28:37 2023 ] 	 Mean training loss: 0.5737.
+[ Tue Nov 14 16:28:37 2023 ] 	 Time consumption: [Data]04%, [Network]96%
+[ Tue Nov 14 16:28:37 2023 ] Eval epoch: 15
+[ Tue Nov 14 16:28:37 2023 ] 	Mean val loss of 1 batches: 0.3423862159252167.
+[ Tue Nov 14 16:28:37 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:28:37 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:28:37 2023 ] Training epoch: 16
+[ Tue Nov 14 16:28:43 2023 ] 	 Mean training loss: 0.5218.
+[ Tue Nov 14 16:28:43 2023 ] 	 Time consumption: [Data]04%, [Network]96%
+[ Tue Nov 14 16:28:43 2023 ] Eval epoch: 16
+[ Tue Nov 14 16:28:44 2023 ] 	Mean val loss of 1 batches: 0.4007589817047119.
+[ Tue Nov 14 16:28:44 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:28:44 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:28:44 2023 ] Training epoch: 17
+[ Tue Nov 14 16:28:49 2023 ] 	 Mean training loss: 0.3836.
+[ Tue Nov 14 16:28:49 2023 ] 	 Time consumption: [Data]04%, [Network]95%
+[ Tue Nov 14 16:28:49 2023 ] Eval epoch: 17
+[ Tue Nov 14 16:28:50 2023 ] 	Mean val loss of 1 batches: 0.3922102451324463.
+[ Tue Nov 14 16:28:50 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:28:50 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:28:50 2023 ] Training epoch: 18
+[ Tue Nov 14 16:28:55 2023 ] 	 Mean training loss: 0.4078.
+[ Tue Nov 14 16:28:55 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:28:55 2023 ] Eval epoch: 18
+[ Tue Nov 14 16:28:56 2023 ] 	Mean val loss of 1 batches: 0.29274776577949524.
+[ Tue Nov 14 16:28:56 2023 ] 	Top1: 87.88%
+[ Tue Nov 14 16:28:56 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:28:56 2023 ] Training epoch: 19
+[ Tue Nov 14 16:29:01 2023 ] 	 Mean training loss: 0.4085.
+[ Tue Nov 14 16:29:01 2023 ] 	 Time consumption: [Data]04%, [Network]96%
+[ Tue Nov 14 16:29:01 2023 ] Eval epoch: 19
+[ Tue Nov 14 16:29:02 2023 ] 	Mean val loss of 1 batches: 0.277097225189209.
+[ Tue Nov 14 16:29:02 2023 ] 	Top1: 87.88%
+[ Tue Nov 14 16:29:02 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:29:02 2023 ] Training epoch: 20
+[ Tue Nov 14 16:29:08 2023 ] 	 Mean training loss: 0.2952.
+[ Tue Nov 14 16:29:08 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:29:08 2023 ] Eval epoch: 20
+[ Tue Nov 14 16:29:08 2023 ] 	Mean val loss of 1 batches: 0.25627952814102173.
+[ Tue Nov 14 16:29:08 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:29:08 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:29:08 2023 ] Training epoch: 21
+[ Tue Nov 14 16:29:14 2023 ] 	 Mean training loss: 0.3296.
+[ Tue Nov 14 16:29:14 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:29:14 2023 ] Eval epoch: 21
+[ Tue Nov 14 16:29:15 2023 ] 	Mean val loss of 1 batches: 0.21231484413146973.
+[ Tue Nov 14 16:29:15 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:29:15 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:29:15 2023 ] Training epoch: 22
+[ Tue Nov 14 16:29:20 2023 ] 	 Mean training loss: 0.4882.
+[ Tue Nov 14 16:29:20 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:29:20 2023 ] Eval epoch: 22
+[ Tue Nov 14 16:29:21 2023 ] 	Mean val loss of 1 batches: 0.235290065407753.
+[ Tue Nov 14 16:29:21 2023 ] 	Top1: 87.88%
+[ Tue Nov 14 16:29:21 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:29:21 2023 ] Training epoch: 23
+[ Tue Nov 14 16:29:27 2023 ] 	 Mean training loss: 0.3788.
+[ Tue Nov 14 16:29:27 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:29:27 2023 ] Eval epoch: 23
+[ Tue Nov 14 16:29:27 2023 ] 	Mean val loss of 1 batches: 0.21485020220279694.
+[ Tue Nov 14 16:29:27 2023 ] 	Top1: 93.94%
+[ Tue Nov 14 16:29:27 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:29:27 2023 ] Training epoch: 24
+[ Tue Nov 14 16:29:33 2023 ] 	 Mean training loss: 0.3988.
+[ Tue Nov 14 16:29:33 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:29:33 2023 ] Eval epoch: 24
+[ Tue Nov 14 16:29:34 2023 ] 	Mean val loss of 1 batches: 0.2658131420612335.
+[ Tue Nov 14 16:29:34 2023 ] 	Top1: 87.88%
+[ Tue Nov 14 16:29:34 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:29:34 2023 ] Training epoch: 25
+[ Tue Nov 14 16:29:39 2023 ] 	 Mean training loss: 0.4129.
+[ Tue Nov 14 16:29:39 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:29:39 2023 ] Eval epoch: 25
+[ Tue Nov 14 16:29:40 2023 ] 	Mean val loss of 1 batches: 0.2642774283885956.
+[ Tue Nov 14 16:29:40 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:29:40 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:29:40 2023 ] Training epoch: 26
+[ Tue Nov 14 16:29:46 2023 ] 	 Mean training loss: 0.3530.
+[ Tue Nov 14 16:29:46 2023 ] 	 Time consumption: [Data]07%, [Network]93%
+[ Tue Nov 14 16:29:46 2023 ] Eval epoch: 26
+[ Tue Nov 14 16:29:47 2023 ] 	Mean val loss of 1 batches: 0.21436963975429535.
+[ Tue Nov 14 16:29:47 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:29:47 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:29:47 2023 ] Training epoch: 27
+[ Tue Nov 14 16:29:53 2023 ] 	 Mean training loss: 0.4552.
+[ Tue Nov 14 16:29:53 2023 ] 	 Time consumption: [Data]09%, [Network]91%
+[ Tue Nov 14 16:29:53 2023 ] Eval epoch: 27
+[ Tue Nov 14 16:29:54 2023 ] 	Mean val loss of 1 batches: 0.3039100170135498.
+[ Tue Nov 14 16:29:54 2023 ] 	Top1: 84.85%
+[ Tue Nov 14 16:29:54 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:29:54 2023 ] Training epoch: 28
+[ Tue Nov 14 16:29:59 2023 ] 	 Mean training loss: 0.2778.
+[ Tue Nov 14 16:29:59 2023 ] 	 Time consumption: [Data]06%, [Network]94%
+[ Tue Nov 14 16:29:59 2023 ] Eval epoch: 28
+[ Tue Nov 14 16:30:00 2023 ] 	Mean val loss of 1 batches: 0.31331995129585266.
+[ Tue Nov 14 16:30:00 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:30:00 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:30:00 2023 ] Training epoch: 29
+[ Tue Nov 14 16:30:06 2023 ] 	 Mean training loss: 0.3424.
+[ Tue Nov 14 16:30:06 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:30:06 2023 ] Eval epoch: 29
+[ Tue Nov 14 16:30:07 2023 ] 	Mean val loss of 1 batches: 0.35492250323295593.
+[ Tue Nov 14 16:30:07 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:30:07 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:30:07 2023 ] Training epoch: 30
+[ Tue Nov 14 16:30:12 2023 ] 	 Mean training loss: 0.3629.
+[ Tue Nov 14 16:30:12 2023 ] 	 Time consumption: [Data]09%, [Network]91%
+[ Tue Nov 14 16:30:12 2023 ] Eval epoch: 30
+[ Tue Nov 14 16:30:14 2023 ] 	Mean val loss of 1 batches: 0.3047371804714203.
+[ Tue Nov 14 16:30:14 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:30:14 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:30:14 2023 ] Training epoch: 31
+[ Tue Nov 14 16:30:19 2023 ] 	 Mean training loss: 0.2638.
+[ Tue Nov 14 16:30:19 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:30:19 2023 ] Eval epoch: 31
+[ Tue Nov 14 16:30:21 2023 ] 	Mean val loss of 1 batches: 0.2903720736503601.
+[ Tue Nov 14 16:30:21 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:30:21 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:30:21 2023 ] Training epoch: 32
+[ Tue Nov 14 16:30:26 2023 ] 	 Mean training loss: 0.2146.
+[ Tue Nov 14 16:30:26 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:30:26 2023 ] Eval epoch: 32
+[ Tue Nov 14 16:30:27 2023 ] 	Mean val loss of 1 batches: 0.27680444717407227.
+[ Tue Nov 14 16:30:27 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:30:27 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:30:27 2023 ] Training epoch: 33
+[ Tue Nov 14 16:30:33 2023 ] 	 Mean training loss: 0.2077.
+[ Tue Nov 14 16:30:33 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:30:33 2023 ] Eval epoch: 33
+[ Tue Nov 14 16:30:34 2023 ] 	Mean val loss of 1 batches: 0.2693292200565338.
+[ Tue Nov 14 16:30:34 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:30:34 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:30:34 2023 ] Training epoch: 34
+[ Tue Nov 14 16:30:40 2023 ] 	 Mean training loss: 0.2437.
+[ Tue Nov 14 16:30:40 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:30:40 2023 ] Eval epoch: 34
+[ Tue Nov 14 16:30:41 2023 ] 	Mean val loss of 1 batches: 0.2683337926864624.
+[ Tue Nov 14 16:30:41 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:30:41 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:30:41 2023 ] Training epoch: 35
+[ Tue Nov 14 16:30:47 2023 ] 	 Mean training loss: 0.1903.
+[ Tue Nov 14 16:30:47 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:30:47 2023 ] Eval epoch: 35
+[ Tue Nov 14 16:30:48 2023 ] 	Mean val loss of 1 batches: 0.26046884059906006.
+[ Tue Nov 14 16:30:48 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:30:48 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:30:48 2023 ] Training epoch: 36
+[ Tue Nov 14 16:30:53 2023 ] 	 Mean training loss: 0.2160.
+[ Tue Nov 14 16:30:53 2023 ] 	 Time consumption: [Data]04%, [Network]95%
+[ Tue Nov 14 16:30:53 2023 ] Eval epoch: 36
+[ Tue Nov 14 16:30:54 2023 ] 	Mean val loss of 1 batches: 0.25788694620132446.
+[ Tue Nov 14 16:30:54 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:30:54 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:30:54 2023 ] Training epoch: 37
+[ Tue Nov 14 16:30:59 2023 ] 	 Mean training loss: 0.2591.
+[ Tue Nov 14 16:30:59 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:30:59 2023 ] Eval epoch: 37
+[ Tue Nov 14 16:31:00 2023 ] 	Mean val loss of 1 batches: 0.2602766454219818.
+[ Tue Nov 14 16:31:00 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:31:00 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:31:00 2023 ] Training epoch: 38
+[ Tue Nov 14 16:31:06 2023 ] 	 Mean training loss: 0.2515.
+[ Tue Nov 14 16:31:06 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:31:06 2023 ] Eval epoch: 38
+[ Tue Nov 14 16:31:07 2023 ] 	Mean val loss of 1 batches: 0.2740616202354431.
+[ Tue Nov 14 16:31:07 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:31:07 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:31:07 2023 ] Training epoch: 39
+[ Tue Nov 14 16:31:12 2023 ] 	 Mean training loss: 0.2346.
+[ Tue Nov 14 16:31:12 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:31:12 2023 ] Eval epoch: 39
+[ Tue Nov 14 16:31:13 2023 ] 	Mean val loss of 1 batches: 0.27412089705467224.
+[ Tue Nov 14 16:31:13 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:31:13 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:31:13 2023 ] Training epoch: 40
+[ Tue Nov 14 16:31:19 2023 ] 	 Mean training loss: 0.2441.
+[ Tue Nov 14 16:31:19 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:31:19 2023 ] Eval epoch: 40
+[ Tue Nov 14 16:31:20 2023 ] 	Mean val loss of 1 batches: 0.2618091404438019.
+[ Tue Nov 14 16:31:20 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:31:20 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:31:20 2023 ] Training epoch: 41
+[ Tue Nov 14 16:31:26 2023 ] 	 Mean training loss: 0.2443.
+[ Tue Nov 14 16:31:26 2023 ] 	 Time consumption: [Data]08%, [Network]91%
+[ Tue Nov 14 16:31:26 2023 ] Eval epoch: 41
+[ Tue Nov 14 16:31:27 2023 ] 	Mean val loss of 1 batches: 0.26800405979156494.
+[ Tue Nov 14 16:31:27 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:31:27 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:31:27 2023 ] Training epoch: 42
+[ Tue Nov 14 16:31:33 2023 ] 	 Mean training loss: 0.5653.
+[ Tue Nov 14 16:31:33 2023 ] 	 Time consumption: [Data]08%, [Network]91%
+[ Tue Nov 14 16:31:33 2023 ] Eval epoch: 42
+[ Tue Nov 14 16:31:34 2023 ] 	Mean val loss of 1 batches: 0.26188400387763977.
+[ Tue Nov 14 16:31:34 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:31:34 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:31:34 2023 ] Training epoch: 43
+[ Tue Nov 14 16:31:39 2023 ] 	 Mean training loss: 0.2138.
+[ Tue Nov 14 16:31:39 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:31:39 2023 ] Eval epoch: 43
+[ Tue Nov 14 16:31:41 2023 ] 	Mean val loss of 1 batches: 0.2616800367832184.
+[ Tue Nov 14 16:31:41 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:31:41 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:31:41 2023 ] Training epoch: 44
+[ Tue Nov 14 16:31:46 2023 ] 	 Mean training loss: 0.2340.
+[ Tue Nov 14 16:31:46 2023 ] 	 Time consumption: [Data]09%, [Network]91%
+[ Tue Nov 14 16:31:46 2023 ] Eval epoch: 44
+[ Tue Nov 14 16:31:47 2023 ] 	Mean val loss of 1 batches: 0.2671274244785309.
+[ Tue Nov 14 16:31:47 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:31:47 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:31:47 2023 ] Training epoch: 45
+[ Tue Nov 14 16:31:53 2023 ] 	 Mean training loss: 0.2055.
+[ Tue Nov 14 16:31:53 2023 ] 	 Time consumption: [Data]08%, [Network]92%
+[ Tue Nov 14 16:31:53 2023 ] Eval epoch: 45
+[ Tue Nov 14 16:31:54 2023 ] 	Mean val loss of 1 batches: 0.2688128650188446.
+[ Tue Nov 14 16:31:54 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:31:54 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:31:54 2023 ] Training epoch: 46
+[ Tue Nov 14 16:31:59 2023 ] 	 Mean training loss: 0.3443.
+[ Tue Nov 14 16:31:59 2023 ] 	 Time consumption: [Data]04%, [Network]95%
+[ Tue Nov 14 16:31:59 2023 ] Eval epoch: 46
+[ Tue Nov 14 16:32:00 2023 ] 	Mean val loss of 1 batches: 0.2668834626674652.
+[ Tue Nov 14 16:32:00 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:32:00 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:32:00 2023 ] Training epoch: 47
+[ Tue Nov 14 16:32:06 2023 ] 	 Mean training loss: 0.3823.
+[ Tue Nov 14 16:32:06 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:32:06 2023 ] Eval epoch: 47
+[ Tue Nov 14 16:32:07 2023 ] 	Mean val loss of 1 batches: 0.26340124011039734.
+[ Tue Nov 14 16:32:07 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:32:07 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:32:07 2023 ] Training epoch: 48
+[ Tue Nov 14 16:32:12 2023 ] 	 Mean training loss: 0.3301.
+[ Tue Nov 14 16:32:12 2023 ] 	 Time consumption: [Data]05%, [Network]95%
+[ Tue Nov 14 16:32:12 2023 ] Eval epoch: 48
+[ Tue Nov 14 16:32:13 2023 ] 	Mean val loss of 1 batches: 0.26309114694595337.
+[ Tue Nov 14 16:32:13 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:32:13 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:32:13 2023 ] Training epoch: 49
+[ Tue Nov 14 16:32:18 2023 ] 	 Mean training loss: 0.2082.
+[ Tue Nov 14 16:32:18 2023 ] 	 Time consumption: [Data]04%, [Network]95%
+[ Tue Nov 14 16:32:18 2023 ] Eval epoch: 49
+[ Tue Nov 14 16:32:19 2023 ] 	Mean val loss of 1 batches: 0.2684505879878998.
+[ Tue Nov 14 16:32:19 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:32:19 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:32:19 2023 ] Training epoch: 50
+[ Tue Nov 14 16:32:25 2023 ] 	 Mean training loss: 0.2217.
+[ Tue Nov 14 16:32:25 2023 ] 	 Time consumption: [Data]04%, [Network]95%
+[ Tue Nov 14 16:32:25 2023 ] Eval epoch: 50
+[ Tue Nov 14 16:32:26 2023 ] 	Mean val loss of 1 batches: 0.253078430891037.
+[ Tue Nov 14 16:32:26 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:32:26 2023 ] 	Top5: 100.00%
+[ Tue Nov 14 16:32:26 2023 ] Eval epoch: 1
+[ Tue Nov 14 16:32:26 2023 ] 	Mean val loss of 1 batches: 0.253078430891037.
+[ Tue Nov 14 16:32:26 2023 ] 	Top1: 90.91%
+[ Tue Nov 14 16:32:26 2023 ] 	Top5: 100.00%
