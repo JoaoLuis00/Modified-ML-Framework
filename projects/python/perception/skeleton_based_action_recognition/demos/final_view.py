@@ -464,7 +464,7 @@ if __name__ == '__main__':
     
     action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom', method_name=METHOD, num_frames=TARGET_FRAMES,
                                                  in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=9, num_person=1)
-    
+
     model_saved_path = Path(__file__).parent / 'models' / 'sides_200frames' / str(MODEL_TO_TEST) / 'model'
     action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
 
@@ -510,7 +510,7 @@ if __name__ == '__main__':
                 prediction = action_classifier.infer(skeleton_seq)
                 category_labels = preds2label(prediction.confidence)
                 print(category_labels)
-            
+
 
             # TODO: alterar o codigo comentado para as novas labels
             # first_key = next(iter(category_labels))
@@ -550,7 +550,6 @@ if __name__ == '__main__':
         key = cv2.waitKey(1)
         if key == ord('q'):
             break
-        
 
     #print("Average inference fps: ", avg_fps)
     cv2.destroyAllWindows()
