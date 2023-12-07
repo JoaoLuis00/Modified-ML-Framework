@@ -1,10 +1,7 @@
 id,name
-0,grab_left
-1,grab_middle
-2,grab_right
-3,request
-4,point_left
-5,point_middle
-6,point_right
-7,approach_left
-8,approach_right
+0,approach_left
+1,approach_right
+2,point_p1
+3,point_p2
+4,point_shelf
+5,request

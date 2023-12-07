@@ -8,13 +8,13 @@ from opendr.perception.skeleton_based_action_recognition.continual_stgcn_learner
 from opendr.engine.datasets import ExternalDataset
 from pathlib import Path
 
-KEYPOINTS = 24
+KEYPOINTS = 46
 
 epochs = 70
-lr = 0.01
+lr = 0.1
 subframes = 100
 
-datatype = 'sides'
+datatype = 'final_atualizado_fullsize'
 #datatype = 'modified_val_data/augmented_data_noise'
 
 experiment_name = f"stgcn_{epochs}epochs_{lr}lr_dropafterepoch5060_batch61"
@@ -29,15 +29,15 @@ def main():
         # batch_size=args.batch_size,
         # backbone=args.backbone,
         num_workers=8,
-        num_frames=300,
+        num_frames=250,
         num_point=KEYPOINTS,
         dataset_name="custom",
-        num_class=9,
+        num_class=6,
         graph_type="custom",
         device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=64, 
-        batch_size=61, 
+        batch_size=64, 
         epochs=epochs,
         in_channels=3,
         num_person=1,

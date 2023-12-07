@@ -1,3 +1,0 @@
-tensor(1),2,5
-tensor(11),1,0
-tensor(14),1,0
