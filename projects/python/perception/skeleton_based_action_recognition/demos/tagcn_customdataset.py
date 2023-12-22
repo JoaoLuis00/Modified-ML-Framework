@@ -1,5 +1,4 @@
-import torch
-import os,sys
+import os
 from opendr.perception.skeleton_based_action_recognition.continual_stgcn_learner import (
     SpatioTemporalGCNLearner,
     _MODEL_NAMES,
@@ -10,14 +9,14 @@ from pathlib import Path
 
 KEYPOINTS = 46
 
-epochs = 70
-lr = 0.1
-subframes = 75
+epochs = 50
+lr = 0.01
+subframes = 100
 
 datatype = 'final_atualizado_fullsize'
 #datatype = 'modified_val_data/augmented_data_noise'
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch5060_batch15"
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch30"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
@@ -46,7 +45,7 @@ def main():
         num_subframes=subframes,
         experiment_name=experiment_name,
         temp_path = str(tmp_path),
-        drop_after_epoch=[50,60]
+        drop_after_epoch=[30,40]
     )
 
     folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)
@@ -76,17 +75,6 @@ def main():
         skeleton_data_type="joint",
         logging_path=str(folder_path)
     )
-    
-    # ret = learner.fit(
-    #     dataset=train_ds,
-    #     val_dataset=val_ds,
-    #     train_data_filename="augmented_train_data_noise.npy",
-    #     train_labels_filename="augmented_train_labels_noise.pkl",
-    #     val_data_filename="val_joints.npy",
-    #     val_labels_filename="val_labels.pkl",
-    #     skeleton_data_type="joint",
-    #     logging_path=str(folder_path)
-    # )
     
     results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt'),wrong_file=os.path.join(folder_path,'wrong.txt') )
     # print("Evaluation results: ", results)

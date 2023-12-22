@@ -10,13 +10,13 @@ from pathlib import Path
 
 KEYPOINTS = 46
 
-epochs = 50
-lr = 0.1
+epochs = 21
+lr = 0.01
 subframes = 100
 
 datatype = 'final_atualizado_fullsize'
 
-experiment_name = f"stbln_{epochs}epochs_{lr}lr_dropafterepoch5060_batch15"
+experiment_name = f"stbln_{epochs}epochs_{lr}lr_dropafterepoch3040_batch30"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
 def main():
@@ -33,10 +33,10 @@ def main():
         dataset_name="custom",
         num_class=6,
         graph_type="custom",
-        device="cuda",
+        device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=64,
-        batch_size=15,
+        batch_size=30,
         epochs=epochs,
         in_channels=3,
         num_person=1,
@@ -44,7 +44,7 @@ def main():
         method_name='stbln',
         stbln_symmetric=False,
         temp_path = str(tmp_path),
-        drop_after_epoch=[50,60]
+        drop_after_epoch=[30,40]
     )
     
     folder_path = Path(__file__).parent/'models'/str(datatype)/str(learner.experiment_name)
