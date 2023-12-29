@@ -40,7 +40,7 @@ mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
 video_folder_path = '/home/joao/Zed'
-svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/approach_left_edge_red_10' + '.svo'))
+svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/approach_right_middle_blue_30' + '.svo'))
 
 TARGET_FRAMES = 250
 NUM_KEYPOINTS = 46

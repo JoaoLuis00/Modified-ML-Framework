@@ -9,14 +9,14 @@ from pathlib import Path
 
 KEYPOINTS = 46
 
-epochs = 50
-lr = 0.01
-subframes = 100
+epochs = 70
+lr = 0.05
+subframes = 125
 
-datatype = 'final_atualizado_fullsize'
+datatype = 'depth_map'
 #datatype = 'modified_val_data/augmented_data_noise'
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch30"
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch60"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
@@ -33,10 +33,10 @@ def main():
         dataset_name="custom",
         num_class=6,
         graph_type="custom",
-        device="cuda",
+        device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=64, 
-        batch_size=30, 
+        batch_size=60, 
         epochs=epochs,
         in_channels=3,
         num_person=1,

@@ -1,0 +1,14 @@
+<launch>
+  <node
+    pkg="zed_python"
+    type="zed_sender.py"
+    name="Zed_pub"
+    output="screen"
+  />
+  <node
+    pkg="zed_python"
+    type="zed_subscriber.py"
+    name="zed_sub"
+    output="screen"
+  />
+</launch>
