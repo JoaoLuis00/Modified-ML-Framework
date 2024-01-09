@@ -1,0 +1,1 @@
+[ Fri Dec 22 17:26:24 2023 ] Training epoch: 1

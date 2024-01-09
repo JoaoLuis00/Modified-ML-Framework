@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 import rospy
 import torch
@@ -17,6 +18,7 @@ import cv2
 import pandas as pd
 from typing import Dict
 from opendr.engine.target import MPPose
+import pyzed.sl as sl
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -34,11 +36,61 @@ RIGHT_SHOULDER = mp.solutions.pose.PoseLandmark.RIGHT_SHOULDER
 LEFT_ELBOW = mp.solutions.pose.PoseLandmark.LEFT_ELBOW
 RIGHT_ELBOW = mp.solutions.pose.PoseLandmark.RIGHT_ELBOW
 
+video_folder_path = '/home/joao/Zed'
+svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/request_40' + '.svo'))
+
 poses_list = []
 counter = 0
 
-DATA_TYPE = 'final_atualizado_fullsize'
-MODEL_TO_TEST = 'tagcn_25epochs_0.01lr_75subframes_dropafterepoch3040_batch30'
+DATA_TYPE = 'depth_map'
+MODEL_TO_TEST = 'tagcn_50epochs_0.1lr_50subframes_dropafterepoch3040_batch64'
+
+class VideoReader(object):
+    
+        # #Create a InitParameters object and set configuration parameters
+        # init_params.camera_resolution = sl.RESOLUTION.HD1080  # Use HD1080 video mode
+        # init_params.depth_mode = sl.DEPTH_MODE.ULTRA
+        # init_params.coordinate_system = sl.COORDINATE_SYSTEM.IMAGE
+        # init_params.camera_fps = 30
+    
+    def __init__(self):
+        '''SETUP ZED PARAMETERS'''
+        # Start ZED OBJECT for camera
+        self.cam = sl.Camera()
+        self.init_params = sl.InitParameters()
+        self.rt_param = sl.RuntimeParameters()
+       
+        self.init_params.svo_real_time_mode = False  # Convert in realtime
+        self.init_params.coordinate_units = sl.UNIT.MILLIMETER     # Set coordinate units
+        self.init_params.camera_resolution = sl.RESOLUTION.HD1080  # Use HD1080 video mode
+        self.init_params.depth_mode = sl.DEPTH_MODE.ULTRA
+        #self.init_params.coordinate_system = sl.COORDINATE_SYSTEM.IMAGE
+        self.init_params.set_from_svo_file(str(svo_path))
+        
+        self.rt_param.enable_fill_mode = True    
+
+    def __iter__(self):
+        status = self.cam.open(self.init_params)
+        #self.cam.set_svo_position(10)
+        if status != sl.ERROR_CODE.SUCCESS:
+            print(repr(status))
+            exit(1)
+        return self
+
+    def __next__(self):
+        #print(self.cam.get_svo_position())
+        if self.cam.grab(self.rt_param) != sl.ERROR_CODE.SUCCESS:
+            raise StopIteration
+        
+        left_image = sl.Mat()
+        depth_map = sl.Mat()
+        if self.cam.retrieve_measure(depth_map, sl.MEASURE.DEPTH) != sl.ERROR_CODE.SUCCESS or \
+        self.cam.retrieve_image(left_image, sl.VIEW.LEFT) != sl.ERROR_CODE.SUCCESS:
+         print("Error retrieving frame data.")
+         raise StopIteration
+        # Convert the image format and point cloud data
+        rgb_image = cv2.cvtColor(left_image.get_data(), cv2.COLOR_BGRA2RGB)
+        return rgb_image, depth_map
 
 class SkeletonActionRecognitionNode:
 
@@ -74,80 +126,67 @@ class SkeletonActionRecognitionNode:
 
         self.hypothesis_publisher = rospy.Publisher("/action_recognition/category", ObjectHypothesis, queue_size=1)
 
-        self.hypothesis_publisher = None
+        #self.hypothesis_publisher = None
 
         self.string_publisher = rospy.Publisher("/action_recognition/category_description", String, queue_size=1)
 
         # Initialize the pose estimation
         self.pose_estimator = mp_holistic.Holistic(min_detection_confidence=0.3, min_tracking_confidence=0.3, model_complexity = 1)
 
-        action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom', method_name='tagcn', num_frames=TARGET_FRAMES,
+        self.action_classifier = SpatioTemporalGCNLearner(device='cpu', dataset_name='custom', method_name='tagcn', num_frames=TARGET_FRAMES,
                                                  in_channels=3,num_point=NUM_KEYPOINTS, graph_type='custom', num_class=6, num_person=1)
         
-        model_saved_path = Path(__file__).parent / 'models' / str(DATA_TYPE) / str(MODEL_TO_TEST) / 'model'
-        action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
+        model_saved_path = Path(__file__).parent.parent.parent.parent / 'models' / str(DATA_TYPE) / str(MODEL_TO_TEST) / 'model'
+        self.action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
         
+        self.image_provider = VideoReader()
+        
+        self.rate = rospy.Rate(30) # 30hz 30x num segundo
 
-    def listen(self):
+    def run(self, data):
         """
-        Start the node and begin processing input data
+        Processing the input, inference and publishing the hypothesis
         """
-        rospy.init_node('opendr_skeleton_action_recognition_node', anonymous=True)
-        rospy.Subscriber(self.input_data_topic, image_depth, self.callback, queue_size=1, buff_size=10000000)
-        rospy.loginfo("Skeleton-based action recognition node started.")
-        rospy.spin()
-
-    def callback(self, data):
-        """
-        Callback that process the input data and publishes to the corresponding topics
-        :param data: input message
-        :type data: sensor_msgs.msg.Image
-        """
-
         # Convert sensor_msgs.msg.Image into OpenDR Image
-        image = self.bridge.imgmsg_to_cv2(data.image)
+        while not rospy.is_shutdown():
+            for rgb_image, depth_map in self.image_provider:
+    
+                results = self.pose_estimator.process(rgb_image)
+                global counter
+                global poses_list
+                pose, missed_pose, missed_hand_left, missed_hand_right = sort_skeleton_data(results, depth_map)
 
-        # Run pose estimation
-        results = self.pose_estimator.process(image)
-        
-        #Unflatten the array
-        depth_map = np.reshape(data.data,(1920,1080))
-        
-        pose, left_hand_center_point, right_hand_center_point, missed_pose, missed_hand_left, missed_hand_right = sort_skeleton_data(results, depth_map)
+                annotated_img = draw_skeletons(cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR, results))
+                
+                if self.image_publisher is not None:
+                    message = self.bridge.cv2_to_imgmsg(annotated_img)
+                    self.image_publisher.publish(message)
 
-        annotated_img = draw_skeletons(image, results)
-        
-        if self.image_publisher is not None:
-            message = self.bridge.to_ros_image(Image(annotated_img))
-            self.image_publisher.publish(message)
+                
+                if not missed_pose and not missed_hand_left and not missed_hand_right:
+                    counter += 1
+                    poses_list.append(pose)
+                    skeleton_seq = pose2numpy(counter, poses_list)
+                    if counter > TARGET_FRAMES: #if more than x frames 
+                        poses_list.pop(0)
+                        counter = TARGET_FRAMES
+                    if counter > 0:
+                        skeleton_seq = pose2numpy(counter, poses_list)
+                        category = self.action_classifier.infer(skeleton_seq)
+                    print(category)
+                    category.confidence = float(category.confidence.max())
 
-        
-        if not missed_pose and not missed_hand_left and not missed_hand_right:
-            counter += 1
-            poses_list.append(pose)
-            skeleton_seq = pose2numpy(counter, poses_list)
-            if counter > TARGET_FRAMES: #if more than x frames 
-                poses_list.pop(0)
-                counter = TARGET_FRAMES
-            if counter > 0:
-                skeleton_seq = pose2numpy(counter, poses_list,3)
-                category = self.action_classifier.infer(skeleton_seq)
-            
-            category.confidence = float(category.confidence.max())
+                    if self.hypothesis_publisher is not None:
+                        self.hypothesis_publisher.publish(to_ros_category(category))
 
-            if self.hypothesis_publisher is not None:
-                self.hypothesis_publisher.publish(to_ros_category(category))
-
-            if self.string_publisher is not None:
-                self.string_publisher.publish(to_ros_category_description(category))
+                    if self.string_publisher is not None:
+                        self.string_publisher.publish(to_ros_category_description(category))
+                        
+                self.rate.sleep()
 
 def sort_skeleton_data(results, depth_map):
     pose_keypoints = np.ones((NUM_KEYPOINTS, 3), dtype=np.int32) * -1
-    hand_keypoints_list_left = []
-    hand_keypoints_list_right = []
     missed_hand_left = missed_hand_right = missed_pose = False
-    mean_x_left = mean_y_left = mean_z_left = -1
-    mean_x_right = mean_y_right = mean_z_right = -1
 
     if results.pose_landmarks:
         pose_landmarks = results.pose_landmarks.landmark
@@ -156,8 +195,11 @@ def sort_skeleton_data(results, depth_map):
             # Left Shoulder
             pose_keypoints[0, 0] = c_x = round(pose_landmarks[LEFT_SHOULDER].x * 1920)
             pose_keypoints[0, 1] = c_y = round(pose_landmarks[LEFT_SHOULDER].y * 1080)
-            err, depth_val = depth_map[c_x,c_y]
-            pose_keypoints[0, 2] = round(depth_val)
+            err, depth_val = depth_map.get_value(c_x, c_y)
+            if err == sl.ERROR_CODE.SUCCESS:
+                pose_keypoints[0, 2] = round(depth_val)
+            else:
+                missed_pose = True
         except (IndexError, AttributeError) as e:
             missed_pose = True
 
@@ -165,7 +207,11 @@ def sort_skeleton_data(results, depth_map):
             # Right Shoulder
             pose_keypoints[1, 0] = c_x = round(pose_landmarks[RIGHT_SHOULDER].x * 1920)
             pose_keypoints[1, 1] = c_y = round(pose_landmarks[RIGHT_SHOULDER].y * 1080)
-            err, depth_val = depth_map[c_x,c_y]
+            err, depth_val = depth_map.get_value(c_x, c_y)
+            if err == sl.ERROR_CODE.SUCCESS:
+                pose_keypoints[1, 2] = round(depth_val)
+            else:
+                missed_pose = True
         except (IndexError, AttributeError) as e:
             missed_pose = True
             
@@ -173,8 +219,11 @@ def sort_skeleton_data(results, depth_map):
             # Left Elbow
             pose_keypoints[2, 0] = c_x = round(pose_landmarks[LEFT_ELBOW].x * 1920)
             pose_keypoints[2, 1] = c_y = round(pose_landmarks[LEFT_ELBOW].y * 1080)
-            err, depth_val = depth_map[c_x,c_y]
-            pose_keypoints[2, 2] = round(depth_val)
+            err, depth_val = depth_map.get_value(c_x, c_y)
+            if err == sl.ERROR_CODE.SUCCESS:
+                pose_keypoints[2, 2] = round(depth_val)
+            else:
+                missed_pose = True
         except (IndexError, AttributeError) as e:
             missed_pose = True
             
@@ -182,8 +231,11 @@ def sort_skeleton_data(results, depth_map):
             # Right Elbow
             pose_keypoints[3, 0] = c_x = round(pose_landmarks[RIGHT_ELBOW].x * 1920)
             pose_keypoints[3, 1] = c_y = round(pose_landmarks[RIGHT_ELBOW].y * 1080)
-            err, depth_val = depth_map[c_x,c_y]
-            pose_keypoints[3, 2] = round(depth_val)
+            err, depth_val = depth_map.get_value(c_x, c_y)
+            if err == sl.ERROR_CODE.SUCCESS:
+                pose_keypoints[3, 2] = round(depth_val)
+            else:
+                missed_pose = True
         except (IndexError, AttributeError) as e:
             missed_pose = True
         
@@ -194,15 +246,17 @@ def sort_skeleton_data(results, depth_map):
         #Left Wrist
         pose_keypoints[4, 0] = c_x = round(left_hand_landmarks[WRIST].x * 1920)
         pose_keypoints[4, 1] = c_y = round(left_hand_landmarks[WRIST].y * 1080)
-        err, depth_val = depth_map[c_x,c_y]
-        d_lwrist = depth_val
-        pose_keypoints[4, 2] = round(d_lwrist)
-        
-        for idx, landmark in enumerate(left_hand_landmarks[1:]):
-            x, y, z = landmark.x * 1920, landmark.y * 1080, d_lwrist + d_lwrist*landmark.z
-            pose_keypoints[idx+5, 0] = round(x)
-            pose_keypoints[idx+5, 1] = round(y)
-            pose_keypoints[idx+5, 2] = round(z) 
+        err, depth_val = depth_map.get_value(c_x, c_y)
+        if err == sl.ERROR_CODE.SUCCESS:
+            d_lwrist = depth_val
+            pose_keypoints[4, 2] = round(d_lwrist)
+            for idx, landmark in enumerate(left_hand_landmarks[1:]):
+                x, y, z = landmark.x * 1920, landmark.y * 1080, d_lwrist + d_lwrist*landmark.z
+                pose_keypoints[idx+5, 0] = round(x)
+                pose_keypoints[idx+5, 1] = round(y)
+                pose_keypoints[idx+5, 2] = round(z) 
+        else:
+            missed_hand_left = True
 
     if not results.right_hand_landmarks:
         missed_hand_right = True
@@ -211,35 +265,24 @@ def sort_skeleton_data(results, depth_map):
         #Right Wrist
         pose_keypoints[25, 0] = c_x = round(right_hand_landmarks[WRIST].x * 1920)
         pose_keypoints[25, 1] = c_y = round(right_hand_landmarks[WRIST].y * 1080)
-        err, depth_val = depth_map[c_x,c_y]
-        d_rwrist = depth_val
-        pose_keypoints[25, 2] = round(d_rwrist)
-        
-        for idx, landmark in enumerate(right_hand_landmarks[1:]):
-            x, y, z = landmark.x * 1920, landmark.y * 1080, d_rwrist + d_rwrist*landmark.z
-            pose_keypoints[idx+26, 0] = round(x)
-            pose_keypoints[idx+26, 1] = round(y)
-            pose_keypoints[idx+26, 2] = round(z)
+        err, depth_val = depth_map.get_value(c_x, c_y)
+        if err == sl.ERROR_CODE.SUCCESS:
+            d_rwrist = depth_val
+            pose_keypoints[25, 2] = round(d_rwrist)
+            for idx, landmark in enumerate(right_hand_landmarks[1:]):
+                x, y, z = landmark.x * 1920, landmark.y * 1080, d_rwrist + d_rwrist*landmark.z
+                pose_keypoints[idx+26, 0] = round(x)
+                pose_keypoints[idx+26, 1] = round(y)
+                pose_keypoints[idx+26, 2] = round(z)
+        else:
+            missed_hand_right = True
 
     pose = MPPose(pose_keypoints, -1)
 
-    if not missed_hand_left:
-        mean_x_left = sum(coord[0] for coord in hand_keypoints_list_left) / len(hand_keypoints_list_left)
-        mean_y_left = sum(coord[1] for coord in hand_keypoints_list_left) / len(hand_keypoints_list_left)
-        mean_z_left = sum(coord[2] for coord in hand_keypoints_list_left) / len(hand_keypoints_list_left)
-        left_hand_center_point = (mean_x_left, mean_y_left, mean_z_left)
-        
-    if not missed_hand_right:
-        mean_x_right = sum(coord[0] for coord in hand_keypoints_list_right) / len(hand_keypoints_list_right)
-        mean_y_right = sum(coord[1] for coord in hand_keypoints_list_right) / len(hand_keypoints_list_right)
-        mean_z_right = sum(coord[2] for coord in hand_keypoints_list_right) / len(hand_keypoints_list_right)
-        right_hand_center_point = (mean_x_right, mean_y_right, mean_z_right)
-
-    return pose, left_hand_center_point,right_hand_center_point, missed_pose, missed_hand_left, missed_hand_right
+    return pose, missed_pose, missed_hand_left, missed_hand_right 
 
 def draw_skeletons(image, results):#, contours, obj_center_point, obj_edge_point):
     # Draw landmark annotation on the image.
-    image.flags.writeable = True
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
     # try:
@@ -349,7 +392,6 @@ def to_ros_category(category):
         return result
     
 if __name__ == '__main__':
-    
     try:
         if torch.cuda.is_available():
             device = "cuda"
@@ -362,4 +404,4 @@ if __name__ == '__main__':
         
     skeleton_action_recognition_node = \
         SkeletonActionRecognitionNode()
-    skeleton_action_recognition_node.listen()
+    skeleton_action_recognition_node.run()

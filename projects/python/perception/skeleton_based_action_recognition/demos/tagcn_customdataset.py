@@ -9,14 +9,14 @@ from pathlib import Path
 
 KEYPOINTS = 46
 
-epochs = 70
-lr = 0.05
-subframes = 125
+epochs = 50
+lr = 0.1
+subframes = 200
 
-datatype = 'depth_map'
+datatype = 'corrected_z'
 #datatype = 'modified_val_data/augmented_data_noise'
 
-experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch60"
+experiment_name = f"tagcn_{epochs}epochs_{lr}lr_{subframes}subframes_dropafterepoch3040_batch64"
 #experiment_name = f"test"
 tmp_path = Path(__file__).parent / "models" / str(datatype) / str(experiment_name) / "model"
 
@@ -24,9 +24,6 @@ def main():
 
     # Define learner
     learner = SpatioTemporalGCNLearner(
-        # device=args.device,
-        # batch_size=args.batch_size,
-        # backbone=args.backbone,
         num_workers=8,
         num_frames=250,
         num_point=KEYPOINTS,
@@ -36,7 +33,7 @@ def main():
         device="cpu",
         checkpoint_after_iter=10,
         val_batch_size=64, 
-        batch_size=60, 
+        batch_size=64, 
         epochs=epochs,
         in_channels=3,
         num_person=1,
@@ -77,12 +74,10 @@ def main():
     )
     
     results = learner.eval(val_ds,result_file=os.path.join(folder_path, 'results.txt'),wrong_file=os.path.join(folder_path,'wrong.txt') )
-    # print("Evaluation results: ", results)
+
     with open(os.path.join(folder_path, f'{learner.experiment_name}.txt'), 'w') as f:
         f.write(str(ret))
         f.write(str(results))
-
-    #learner.optimize(do_constant_folding=True)
     
     save_model_path = folder_path/'model'
     

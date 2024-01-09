@@ -29,7 +29,7 @@ def callback(image_depth_msg):
   
   depth_map = image_depth_msg.data
   depth_map = np.reshape(depth_map,(1920,1080))
-  print(depth_map[10,20])
+  #print(depth_map[10,20])
    
   # Display image
   cv2.imshow("camera", current_frame)

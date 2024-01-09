@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import numpy as np
 import os
 import torch
@@ -40,24 +39,23 @@ mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
 video_folder_path = '/home/joao/Zed'
-svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/approach_right_middle_blue_30' + '.svo'))
+svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/request_40' + '.svo'))
 
 TARGET_FRAMES = 250
 NUM_KEYPOINTS = 46
 ORIGIN = (0,0,0)
 
+WRIST = mp.solutions.holistic.HandLandmark.WRIST
+LEFT_SHOULDER = mp.solutions.pose.PoseLandmark.LEFT_SHOULDER
+RIGHT_SHOULDER = mp.solutions.pose.PoseLandmark.RIGHT_SHOULDER
+LEFT_ELBOW = mp.solutions.pose.PoseLandmark.LEFT_ELBOW
+RIGHT_ELBOW = mp.solutions.pose.PoseLandmark.RIGHT_ELBOW
+
 DATA_TYPE = 'final_atualizado_fullsize'
+#DATA_TYPE = 'depth_map'
 
-# LR 0.1
-#MODEL_TO_TEST = 'tagcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
-#MODEL_TO_TEST = 'tagcn_66epochs_0.1lr_75subframes_dropafterepoch3040_batch30'
-
-# LR 0.01
-#MODEL_TO_TEST = 'tagcn_24epochs_0.01lr_100subframes_dropafterepoch3040_batch30'
-MODEL_TO_TEST = 'tagcn_25epochs_0.01lr_75subframes_dropafterepoch3040_batch30'
-
-
-#MODEL_TO_TEST = 'stgcn_28epochs_0.01lr_dropafterepoch3040_batch30'
+MODEL_TO_TEST = 'tagcn_24epochs_0.01lr_100subframes_dropafterepoch3040_batch30'
+#MODEL_TO_TEST = 'tagcn_44epochs_0.01lr_100subframes_dropafterepoch3040_batch60'
 
 
 if MODEL_TO_TEST.split('_')[0] == 'tagcn':
@@ -86,6 +84,9 @@ class VideoReader(object):
         self.init_params.svo_real_time_mode = False  # Convert in realtime
         self.init_params.coordinate_units = sl.UNIT.MILLIMETER     # Set coordinate units
         self.init_params.set_from_svo_file(str(svo_path))
+        self.init_params.camera_resolution = sl.RESOLUTION.HD1080  # Use HD1080 video mode
+        # self.init_params.depth_mode = sl.DEPTH_MODE.ULTRA
+        # self.init_params.coordinate_system = sl.COORDINATE_SYSTEM.IMAGE
         
         self.rt_param.enable_fill_mode = True    
 
@@ -226,97 +227,84 @@ def sort_skeleton_data(results, point_cloud):
     mean_x_left = mean_y_left = mean_z_left = -1
     mean_x_right = mean_y_right = mean_z_right = -1
 
-    try:  # change the z coordinate to get from the generated depth information
-        # Left Shoulder
-        pose_keypoints[0, 0] = c_x = int(
-            results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].x * 1920)
-        pose_keypoints[0, 1] = c_y = int(
-            results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].y * 1080)
-        err, point_cloud_value = point_cloud.get_value(c_x, c_y)
-        distance = math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN)
-        pose_keypoints[0, 2] = int(distance)
-
-    except (IndexError, AttributeError) as e:
-        # print(f"Values missing Pose -> sample: {s_name}")
-        missed_pose = True
-
-    try:
-        # Right Shoulder
-        pose_keypoints[1, 0] = c_x = int(
-            results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].x * 1920)
-        pose_keypoints[1, 1] = c_y = int(
-            results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].y * 1080)
-        err, point_cloud_value = point_cloud.get_value(c_x, c_y)
-        distance = math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN)
-        pose_keypoints[1, 2] = int(distance)
-
-    except (IndexError, AttributeError) as e:
-        # print(f"Values missing Pose -> sample: {s_name}")
-        missed_pose = True
-        
-    try:    
-        # Left Elbow
-        pose_keypoints[2, 0] = c_x = int(
-            results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].x * 1920)
-        pose_keypoints[2, 1] = c_y = int(
-            results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].y * 1080)
-
-        err, point_cloud_value = point_cloud.get_value(c_x, c_y)
-        distance = math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN)
-        pose_keypoints[2, 2] = int(distance)
-
-    except (IndexError, AttributeError) as e:
-        # print(f"Values missing Pose -> sample: {s_name}")
-        missed_pose = True
-
-    try:    
-        # Right Elbow
-        pose_keypoints[3, 0] = c_x = int(
-            results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].x * 1920)
-        pose_keypoints[3, 1] = c_y = int(
-            results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].y * 1080)
-
-        err, point_cloud_value = point_cloud.get_value(c_x, c_y)
-        distance = math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN)
-        pose_keypoints[3, 2] = int(distance)
-
-    except (IndexError, AttributeError) as e:
-        # print(f"Values missing Pose -> sample: {s_name}")
-        missed_pose = True
-        
-    if results.left_hand_landmarks:
-        for i in range(21):
-            # Left Hand
-            pose_keypoints[i+4, 0] = c_x = int(
-                results.left_hand_landmarks.landmark[i].x * 1920)
-            pose_keypoints[i+4, 1] = c_y = int(
-                results.left_hand_landmarks.landmark[i].y * 1080)
-
+    if results.pose_landmarks:
+        pose_landmarks = results.pose_landmarks.landmark
+    
+        try:  # change the z coordinate to get from the generated depth information
+            # Left Shoulder
+            pose_keypoints[0, 0] = c_x = round(pose_landmarks[LEFT_SHOULDER].x * 1920)
+            pose_keypoints[0, 1] = c_y = round(pose_landmarks[LEFT_SHOULDER].y * 1080)
             err, point_cloud_value = point_cloud.get_value(c_x, c_y)
-            distance = math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN)
-            pose_keypoints[i+4, 2] = int(distance)
-            c_z = int(distance)
+            pose_keypoints[0, 2] = round(math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN))
+        except (IndexError, AttributeError) as e:
+            missed_pose = True
+
+        try:
+            # Right Shoulder
+            pose_keypoints[1, 0] = c_x = round(pose_landmarks[RIGHT_SHOULDER].x * 1920)
+            pose_keypoints[1, 1] = c_y = round(pose_landmarks[RIGHT_SHOULDER].y * 1080)
+            err, point_cloud_value = point_cloud.get_value(c_x, c_y)
+            pose_keypoints[1, 2] = round(math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN))
+        except (IndexError, AttributeError) as e:
+            missed_pose = True
             
-            hand_keypoints_list_left.append((c_x,c_y,c_z))
+        try:
+            # Left Elbow
+            pose_keypoints[2, 0] = c_x = round(pose_landmarks[LEFT_ELBOW].x * 1920)
+            pose_keypoints[2, 1] = c_y = round(pose_landmarks[LEFT_ELBOW].y * 1080)
+            err, point_cloud_value = point_cloud.get_value(c_x, c_y)
+            pose_keypoints[2, 2] = round(math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN))
+        except (IndexError, AttributeError) as e:
+            missed_pose = True
+            
+        try:
+            # Right Elbow
+            pose_keypoints[3, 0] = c_x = round(pose_landmarks[RIGHT_ELBOW].x * 1920)
+            pose_keypoints[3, 1] = c_y = round(pose_landmarks[RIGHT_ELBOW].y * 1080)
+            err, point_cloud_value = point_cloud.get_value(c_x, c_y)
+            pose_keypoints[3, 2] = round(math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN))
+        except (IndexError, AttributeError) as e:
+            missed_pose = True
     else:
+        missed_pose = True
+        
+    if not results.left_hand_landmarks:
         missed_hand_left = True
-        
-    if results.right_hand_landmarks:
-        for i in range(21):
-            # Right Hand
-            pose_keypoints[i+25, 0] = c_x = int(
-                results.right_hand_landmarks.landmark[i].x * 1920)
-            pose_keypoints[i+25, 1] = c_y = int(
-                results.right_hand_landmarks.landmark[i].y * 1080)
-
-            err, point_cloud_value = point_cloud.get_value(c_x, c_y)
-            distance = math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN)
-            pose_keypoints[i+25, 2] = int(distance)
-            c_z = int(distance)
-            
-            hand_keypoints_list_right.append((c_x,c_y,c_z))
     else:
+        left_hand_landmarks = results.left_hand_landmarks.landmark
+        #Left Wrist
+        pose_keypoints[4, 0] = c_x = round(left_hand_landmarks[WRIST].x * 1920)
+        pose_keypoints[4, 1] = c_y = round(left_hand_landmarks[WRIST].y * 1080)
+        err, point_cloud_value = point_cloud.get_value(c_x, c_y)
+        d_lwrist = math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN)
+        pose_keypoints[4, 2] = round(d_lwrist)
+        hand_keypoints_list_left.append((c_x,c_y,round(d_lwrist)))
+        
+        for idx, landmark in enumerate(left_hand_landmarks[1:]):
+            x, y, z = landmark.x * 1920, landmark.y * 1080, d_lwrist + d_lwrist*landmark.z
+            pose_keypoints[idx+5, 0] = round(x)
+            pose_keypoints[idx+5, 1] = round(y)
+            pose_keypoints[idx+5, 2] = round(z) 
+            hand_keypoints_list_left.append((round(x),round(y),round(z)))
+
+    if not results.right_hand_landmarks:
         missed_hand_right = True
+    else:
+        right_hand_landmarks =  results.right_hand_landmarks.landmark
+        #Right Wrist
+        pose_keypoints[25, 0] = c_x = round(right_hand_landmarks[WRIST].x * 1920)
+        pose_keypoints[25, 1] = c_y = round(right_hand_landmarks[WRIST].y * 1080)
+        err, point_cloud_value = point_cloud.get_value(c_x, c_y)
+        d_rwrist = math.dist((point_cloud_value[0],point_cloud_value[1],point_cloud_value[2]),ORIGIN)
+        pose_keypoints[25, 2] = round(d_rwrist)
+        hand_keypoints_list_right.append((c_x,c_y,round(d_rwrist)))
+        
+        for idx, landmark in enumerate(right_hand_landmarks[1:]):
+            x, y, z = landmark.x * 1920, landmark.y * 1080, d_rwrist + d_rwrist*landmark.z
+            pose_keypoints[idx+26, 0] = round(x)
+            pose_keypoints[idx+26, 1] = round(y)
+            pose_keypoints[idx+26, 2] = round(z)
+            hand_keypoints_list_right.append((round(x),round(y),round(z)))
 
     pose = MPPose(pose_keypoints, -1)
 
@@ -324,17 +312,15 @@ def sort_skeleton_data(results, point_cloud):
         mean_x_left = sum(coord[0] for coord in hand_keypoints_list_left) / len(hand_keypoints_list_left)
         mean_y_left = sum(coord[1] for coord in hand_keypoints_list_left) / len(hand_keypoints_list_left)
         mean_z_left = sum(coord[2] for coord in hand_keypoints_list_left) / len(hand_keypoints_list_left)
+        left_hand_center_point = (mean_x_left, mean_y_left, mean_z_left)
         
     if not missed_hand_right:
         mean_x_right = sum(coord[0] for coord in hand_keypoints_list_right) / len(hand_keypoints_list_right)
         mean_y_right = sum(coord[1] for coord in hand_keypoints_list_right) / len(hand_keypoints_list_right)
         mean_z_right = sum(coord[2] for coord in hand_keypoints_list_right) / len(hand_keypoints_list_right)
+        right_hand_center_point = (mean_x_right, mean_y_right, mean_z_right)
 
-    # Center point or midpoint of the hand in 3D space
-    left_hand_center_point = (mean_x_left, mean_y_left, mean_z_left)
-    right_hand_center_point = (mean_x_right, mean_y_right, mean_z_right)
-
-    return pose, left_hand_center_point,right_hand_center_point
+    return pose, left_hand_center_point,right_hand_center_point, missed_pose, missed_hand_left, missed_hand_right
 
 def getOrientation(img):
 
@@ -531,12 +517,12 @@ if __name__ == '__main__':
         if f_ind % window == 0:
             start_time = time.perf_counter()
 
-            # angle, obj_center_point, obj_edge_point, contours, no_contours_detected = getOrientation(cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
-            # if not no_contours_detected: 
-            #     obj_edge_point, obj_center_point = getObj3dCoords(obj_center_point, obj_edge_point, point_cloud)
-            #     list_contours.append((no_contours_detected, contours, obj_center_point, obj_edge_point))
-            #     if len(list_contours) > TARGET_FRAMES:
-            #         list_contours.pop(0)
+            angle, obj_center_point, obj_edge_point, contours, no_contours_detected = getOrientation(cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
+            if not no_contours_detected: 
+                obj_edge_point, obj_center_point = getObj3dCoords(obj_center_point, obj_edge_point, point_cloud)
+                list_contours.append((no_contours_detected, contours, obj_center_point, obj_edge_point))
+                if len(list_contours) > TARGET_FRAMES:
+                    list_contours.pop(0)
 
             img_rgb.flags.writeable = False
             
@@ -544,9 +530,11 @@ if __name__ == '__main__':
             
             img_rgb.flags.writeable = True
 
-            pose, left_hand_center_point, right_hand_center_point = sort_skeleton_data(results, point_cloud)
-            counter += 1
-            poses_list.append(pose)
+            pose, left_hand_center_point, right_hand_center_point, missed_pose, missed_hand_left, missed_hand_right = sort_skeleton_data(results, point_cloud)
+            
+            if not missed_pose and not missed_hand_right and not missed_hand_left:
+                counter += 1
+                poses_list.append(pose)
 
             if counter > TARGET_FRAMES: #if more than x00 frames 
                 poses_list.pop(0)
@@ -561,35 +549,33 @@ if __name__ == '__main__':
             first_key = next(iter(category_labels))
             first_value = category_labels[first_key]
 
-            # if first_key == 'approach_left':
-            #     contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
-            #     if found_contour:
-            #         d_hand_objCenter = getDistance(left_hand_center_point, obj_center_point)
-            #         d_hand_objEdge = getDistance(left_hand_center_point, obj_edge_point)
-            #         if d_hand_objCenter < 100 or d_hand_objEdge < 100:
-            #             if d_hand_objCenter < d_hand_objEdge:
-            #                 new_action = 'left_middle_grab'
-            #             else:
-            #                 new_action = 'left_edge_grab'
+            if first_key == 'approach_left':
+                contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
+                if found_contour:
+                    d_hand_objCenter = getDistance(left_hand_center_point, obj_center_point)
+                    d_hand_objEdge = getDistance(left_hand_center_point, obj_edge_point)
+                    if d_hand_objCenter < 100 or d_hand_objEdge < 100:
+                        if d_hand_objCenter < d_hand_objEdge:
+                            new_action = 'left_middle_grab'
+                        else:
+                            new_action = 'left_edge_grab'
             
-            #             #Update predicted labels dictionary
-            #             category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
+                        #Update predicted labels dictionary
+                        category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
                         
-            # if first_key == 'approach_right':
-            #     contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
-            #     if found_contour:
-            #         d_hand_objCenter = getDistance(right_hand_center_point, obj_center_point)
-            #         d_hand_objEdge = getDistance(right_hand_center_point, obj_edge_point)
-            #         if d_hand_objCenter < 100 or d_hand_objEdge < 100:
-            #             if d_hand_objCenter < d_hand_objEdge:
-            #                 new_action = 'right_middle_grab'
-            #             else:
-            #                 new_action = 'right_edge_grab'
+            if first_key == 'approach_right':
+                contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
+                if found_contour:
+                    d_hand_objCenter = getDistance(right_hand_center_point, obj_center_point)
+                    d_hand_objEdge = getDistance(right_hand_center_point, obj_edge_point)
+                    if d_hand_objCenter < 100 or d_hand_objEdge < 100:
+                        if d_hand_objCenter < d_hand_objEdge:
+                            new_action = 'right_middle_grab'
+                        else:
+                            new_action = 'right_edge_grab'
             
-            #             #Update predicted labels dictionary
-            #             category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
-            
-            # contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
+                        #Update predicted labels dictionary
+                        category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
 
             annotated_bgr_image = draw_skeletons(img_rgb, results)#, contours, obj_center_point, obj_edge_point)
             draw_preds(annotated_bgr_image, category_labels)

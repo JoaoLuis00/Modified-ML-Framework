@@ -1,0 +1,1 @@
+{"model_paths": ["/home/joao/opendr/projects/python/perception/skeleton_based_action_recognition/demos/models/sides/stgcn_70epochs_0.1lr_dropafterepoch5060_batch61/model/stgcn_70epochs_0.1lr_dropafterepoch5060_batch61.pt"], "framework": "pytorch", "format": "pt", "has_data": false, "inference_params": {}, "optimized": false, "optimizer_info": {}}

@@ -1,0 +1,1 @@
+{"model_paths": ["/home/joao/opendr/projects/python/perception/skeleton_based_action_recognition/demos/models/depth_map/tagcn_50epochs_0.1lr_30subframes_dropafterepoch3040_batch64/model/tagcn_50epochs_0.1lr_30subframes_dropafterepoch3040_batch64.pt"], "framework": "pytorch", "format": "pt", "has_data": false, "inference_params": {}, "optimized": false, "optimizer_info": {}}

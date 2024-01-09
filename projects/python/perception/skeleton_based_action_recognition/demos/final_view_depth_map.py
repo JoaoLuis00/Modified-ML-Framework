@@ -40,7 +40,7 @@ mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
 video_folder_path = '/home/joao/Zed'
-svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/approach_left_middle_blue_10' + '.svo'))
+svo_path = os.path.join(str(video_folder_path), str('uncompressed' + '/approach_left_edge_blue_30' + '.svo'))
 
 TARGET_FRAMES = 250
 NUM_KEYPOINTS = 46
@@ -54,12 +54,8 @@ RIGHT_ELBOW = mp.solutions.pose.PoseLandmark.RIGHT_ELBOW
 DATA_TYPE = 'depth_map'
 
 # LR 0.1
-#MODEL_TO_TEST = 'tagcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
-#MODEL_TO_TEST = 'tagcn_66epochs_0.1lr_75subframes_dropafterepoch3040_batch30'
-
-# LR 0.01
-#MODEL_TO_TEST = 'tagcn_24epochs_0.01lr_100subframes_dropafterepoch3040_batch30'
-MODEL_TO_TEST = 'tagcn_44epochs_0.01lr_100subframes_dropafterepoch3040_batch60'
+MODEL_TO_TEST = 'tagcn_50epochs_0.1lr_50subframes_dropafterepoch3040_batch64'
+#MODEL_TO_TEST = 'tagcn_50epochs_0.01lr_75subframes_dropafterepoch3040_batch60'
 
 
 #MODEL_TO_TEST = 'stgcn_28epochs_0.01lr_dropafterepoch3040_batch30'
@@ -75,12 +71,6 @@ ACTION_CLASSES = pd.read_csv(os.path.join(Path(__file__).parent,'custom_labels.c
 
 class VideoReader(object):
     
-        # #Create a InitParameters object and set configuration parameters
-        # init_params.camera_resolution = sl.RESOLUTION.HD1080  # Use HD1080 video mode
-        # init_params.depth_mode = sl.DEPTH_MODE.ULTRA
-        # init_params.coordinate_system = sl.COORDINATE_SYSTEM.IMAGE
-        # init_params.camera_fps = 30
-    
     def __init__(self):
         '''SETUP ZED PARAMETERS'''
         # Start ZED OBJECT for camera
@@ -90,8 +80,11 @@ class VideoReader(object):
        
         self.init_params.svo_real_time_mode = False  # Convert in realtime
         self.init_params.coordinate_units = sl.UNIT.MILLIMETER     # Set coordinate units
+        self.init_params.camera_resolution = sl.RESOLUTION.HD1080  # Use HD1080 video mode
+        #self.init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE
+        #self.init_params.coordinate_system = sl.COORDINATE_SYSTEM.IMAGE
         self.init_params.set_from_svo_file(str(svo_path))
-        
+
         self.rt_param.enable_fill_mode = True    
 
     def __iter__(self):
@@ -103,7 +96,7 @@ class VideoReader(object):
         return self
 
     def __next__(self):
-        print(self.cam.get_svo_position())
+        #print(self.cam.get_svo_position())
         if self.cam.grab(self.rt_param) != sl.ERROR_CODE.SUCCESS:
             raise StopIteration
         
@@ -116,15 +109,8 @@ class VideoReader(object):
         
         # Convert the image format and point cloud data
         rgb_image = cv2.cvtColor(left_image.get_data(), cv2.COLOR_BGRA2RGB)
-        #point_cloud_data = point_cloud
-        
-        # # Free the memory of the matrices
-        # left_image.free()
-        # point_cloud.free()
-        
         return rgb_image, depth_map
-        #return cv2.cvtColor(left_image, cv2.COLOR_BGRA2RGB), point_cloud #returns rgb image to send to mediapipe
-
+    
 def tile(a, dim, n_tile):
     a = torch.from_numpy(a)
     init_dim = a.size(dim)
@@ -189,15 +175,15 @@ def draw_preds(frame, preds: Dict):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, (0, 255, 255), 2,)
         
-def draw_skeletons(image, results):#, contours, obj_center_point, obj_edge_point):
+def draw_skeletons(image, results, contours, obj_center_point, obj_edge_point):
     # Draw landmark annotation on the image.
     image.flags.writeable = True
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-    # try:
-    #     image = drawContours(image, contours, center=obj_center_point, top_point=obj_edge_point)
-    # except (IndexError,TypeError):
-    #     pass
+    try:
+        image = drawContours(image, contours, center=obj_center_point, top_point=obj_edge_point)
+    except (IndexError,TypeError):
+        pass
     
     mp_drawing.draw_landmarks(
         image,
@@ -240,8 +226,11 @@ def sort_skeleton_data(results, depth_map):
             pose_keypoints[0, 0] = c_x = round(pose_landmarks[LEFT_SHOULDER].x * 1920)
             pose_keypoints[0, 1] = c_y = round(pose_landmarks[LEFT_SHOULDER].y * 1080)
             err, depth_val = depth_map.get_value(c_x, c_y)
-            pose_keypoints[0, 2] = round(depth_val)
-        except (IndexError, AttributeError) as e:
+            if err == sl.ERROR_CODE.SUCCESS:
+                pose_keypoints[0, 2] = round(depth_val)
+            else:
+                missed_pose = True
+        except (IndexError, AttributeError, OverflowError) as e:
             missed_pose = True
 
         try:
@@ -249,8 +238,11 @@ def sort_skeleton_data(results, depth_map):
             pose_keypoints[1, 0] = c_x = round(pose_landmarks[RIGHT_SHOULDER].x * 1920)
             pose_keypoints[1, 1] = c_y = round(pose_landmarks[RIGHT_SHOULDER].y * 1080)
             err, depth_val = depth_map.get_value(c_x, c_y)
-            pose_keypoints[1, 2] = round(depth_val)
-        except (IndexError, AttributeError) as e:
+            if err == sl.ERROR_CODE.SUCCESS:
+                pose_keypoints[1, 2] = round(depth_val)
+            else:
+                missed_pose = True
+        except (IndexError, AttributeError, OverflowError) as e:
             missed_pose = True
             
         try:
@@ -258,8 +250,11 @@ def sort_skeleton_data(results, depth_map):
             pose_keypoints[2, 0] = c_x = round(pose_landmarks[LEFT_ELBOW].x * 1920)
             pose_keypoints[2, 1] = c_y = round(pose_landmarks[LEFT_ELBOW].y * 1080)
             err, depth_val = depth_map.get_value(c_x, c_y)
-            pose_keypoints[2, 2] = round(depth_val)
-        except (IndexError, AttributeError) as e:
+            if err == sl.ERROR_CODE.SUCCESS:
+                pose_keypoints[2, 2] = round(depth_val)
+            else:
+                missed_pose = True
+        except (IndexError, AttributeError, OverflowError) as e:
             missed_pose = True
             
         try:
@@ -267,8 +262,11 @@ def sort_skeleton_data(results, depth_map):
             pose_keypoints[3, 0] = c_x = round(pose_landmarks[RIGHT_ELBOW].x * 1920)
             pose_keypoints[3, 1] = c_y = round(pose_landmarks[RIGHT_ELBOW].y * 1080)
             err, depth_val = depth_map.get_value(c_x, c_y)
-            pose_keypoints[3, 2] = round(depth_val)
-        except (IndexError, AttributeError) as e:
+            if err == sl.ERROR_CODE.SUCCESS:
+                pose_keypoints[3, 2] = round(depth_val)
+            else:
+                missed_pose = True
+        except (IndexError, AttributeError, OverflowError) as e:
             missed_pose = True
         
     if not results.left_hand_landmarks:
@@ -279,16 +277,18 @@ def sort_skeleton_data(results, depth_map):
         pose_keypoints[4, 0] = c_x = round(left_hand_landmarks[WRIST].x * 1920)
         pose_keypoints[4, 1] = c_y = round(left_hand_landmarks[WRIST].y * 1080)
         err, depth_val = depth_map.get_value(c_x, c_y)
-        d_lwrist = depth_val
-        pose_keypoints[4, 2] = round(d_lwrist)
-        hand_keypoints_list_left.append((c_x,c_y,round(d_lwrist)))
-        
-        for idx, landmark in enumerate(left_hand_landmarks[1:]):
-            x, y, z = landmark.x * 1920, landmark.y * 1080, d_lwrist + d_lwrist*landmark.z
-            pose_keypoints[idx+5, 0] = round(x)
-            pose_keypoints[idx+5, 1] = round(y)
-            pose_keypoints[idx+5, 2] = round(z) 
-            hand_keypoints_list_left.append((round(x),round(y),round(z)))
+        if err == sl.ERROR_CODE.SUCCESS:
+            d_lwrist = depth_val
+            pose_keypoints[4, 2] = round(d_lwrist)
+            hand_keypoints_list_left.append((c_x,c_y,round(d_lwrist)))
+            for idx, landmark in enumerate(left_hand_landmarks[1:]):
+                x, y, z = landmark.x * 1920, landmark.y * 1080, d_lwrist + d_lwrist*landmark.z
+                pose_keypoints[idx+5, 0] = round(x)
+                pose_keypoints[idx+5, 1] = round(y)
+                pose_keypoints[idx+5, 2] = round(z) 
+                hand_keypoints_list_left.append((round(x),round(y),round(z)))
+        else:
+            missed_hand_left = True
 
     if not results.right_hand_landmarks:
         missed_hand_right = True
@@ -298,17 +298,18 @@ def sort_skeleton_data(results, depth_map):
         pose_keypoints[25, 0] = c_x = round(right_hand_landmarks[WRIST].x * 1920)
         pose_keypoints[25, 1] = c_y = round(right_hand_landmarks[WRIST].y * 1080)
         err, depth_val = depth_map.get_value(c_x, c_y)
-        d_rwrist = depth_val
-        pose_keypoints[25, 2] = round(d_rwrist)
-        hand_keypoints_list_right.append((c_x,c_y,round(d_rwrist)))
-        
-        for idx, landmark in enumerate(right_hand_landmarks[1:]):
-            x, y, z = landmark.x * 1920, landmark.y * 1080, d_rwrist + d_rwrist*landmark.z
-            pose_keypoints[idx+26, 0] = round(x)
-            pose_keypoints[idx+26, 1] = round(y)
-            pose_keypoints[idx+26, 2] = round(z)
-            hand_keypoints_list_right.append((round(x),round(y),round(z)))
-
+        if err == sl.ERROR_CODE.SUCCESS:
+            d_rwrist = depth_val
+            pose_keypoints[25, 2] = round(d_rwrist)
+            hand_keypoints_list_right.append((c_x,c_y,round(d_rwrist)))
+            for idx, landmark in enumerate(right_hand_landmarks[1:]):
+                x, y, z = landmark.x * 1920, landmark.y * 1080, d_rwrist + d_rwrist*landmark.z
+                pose_keypoints[idx+26, 0] = round(x)
+                pose_keypoints[idx+26, 1] = round(y)
+                pose_keypoints[idx+26, 2] = round(z)
+                hand_keypoints_list_right.append((round(x),round(y),round(z)))
+        else:
+            missed_hand_right = True
 
     pose = MPPose(pose_keypoints, -1)
 
@@ -327,7 +328,6 @@ def sort_skeleton_data(results, depth_map):
     return pose, left_hand_center_point,right_hand_center_point, missed_pose, missed_hand_left, missed_hand_right
 
 def getOrientation(img):
-
   img_spliced = img[510:,160:1700]
   #cv22.imshow('Input Image', img)
 
@@ -428,17 +428,11 @@ def getDistance(point1, point2):
                 #(point2[2] - point1[2])**2)
     return d
 
-def getObj3dCoords(object_center, object_edge, point_cloud):
+def getObj3dCoords(object_center, object_edge, depth_map):
    
-  err, point_cloud_value = point_cloud.get_value(object_edge[0], object_edge[1])
-  object_edge_distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
-                        point_cloud_value[1] * point_cloud_value[1] +
-                        point_cloud_value[2] * point_cloud_value[2])
+  err, object_edge_distance = depth_map.get_value(object_edge[0], object_edge[1])
   
-  err, point_cloud_value = point_cloud.get_value(object_center[0], object_center[1])
-  object_center_distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
-                        point_cloud_value[1] * point_cloud_value[1] +
-                        point_cloud_value[2] * point_cloud_value[2])
+  err, object_center_distance = depth_map.get_value(object_center[0], object_center[1])
   
   return (object_edge[0], object_edge[1], int(object_edge_distance)), (object_center[0], object_center[1], object_center_distance)
 
@@ -509,7 +503,7 @@ if __name__ == '__main__':
     poses_list = []
     window = 1
     f_ind = 0
-    detector = mp_holistic.Holistic(min_detection_confidence=0.3, min_tracking_confidence=0.3, model_complexity = 1)
+    detector = mp_holistic.Holistic(min_detection_confidence=0.3, min_tracking_confidence=0.3, model_complexity = 2)
     time.sleep((5))
 
     list_contours = []
@@ -521,21 +515,20 @@ if __name__ == '__main__':
         if f_ind % window == 0:
             start_time = time.perf_counter()
 
-            # angle, obj_center_point, obj_edge_point, contours, no_contours_detected = getOrientation(cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
-            # if not no_contours_detected: 
-            #     obj_edge_point, obj_center_point = getObj3dCoords(obj_center_point, obj_edge_point, point_cloud)
-            #     list_contours.append((no_contours_detected, contours, obj_center_point, obj_edge_point))
-            #     if len(list_contours) > TARGET_FRAMES:
-            #         list_contours.pop(0)
+            angle, obj_center_point, obj_edge_point, contours, no_contours_detected = getOrientation(cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR))
+            if not no_contours_detected: 
+                obj_edge_point, obj_center_point = getObj3dCoords(obj_center_point, obj_edge_point, depth_map)
+                list_contours.append((no_contours_detected, contours, obj_center_point, obj_edge_point))
+                if len(list_contours) > TARGET_FRAMES:
+                    list_contours.pop(0)
 
             img_rgb.flags.writeable = False
-            
             results = detector.process(img_rgb)
-            
             img_rgb.flags.writeable = True
 
             pose, left_hand_center_point, right_hand_center_point, missed_pose, missed_hand_left, missed_hand_right = sort_skeleton_data(results, depth_map)
-            if not missed_pose or not missed_hand_left or not missed_hand_left:
+            print(missed_pose, missed_hand_left, missed_hand_right)
+            if not missed_pose and not missed_hand_left and not missed_hand_left:
                 counter += 1
                 poses_list.append(pose)
 
@@ -553,52 +546,46 @@ if __name__ == '__main__':
                 category_labels = preds2label(prediction.confidence)
                 print(category_labels)
 
-            # TODO: alterar o codigo comentado para as novas labels
-            first_key = next(iter(category_labels))
-            first_value = category_labels[first_key]
+                first_key = next(iter(category_labels))
+                first_value = category_labels[first_key]
 
-            # if first_key == 'approach_left':
-            #     contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
-            #     if found_contour:
-            #         d_hand_objCenter = getDistance(left_hand_center_point_old, obj_center_point)
-            #         d_hand_objEdge = getDistance(left_hand_center_point_old, obj_edge_point)
-            #         if d_hand_objCenter < 100 or d_hand_objEdge < 100:
-            #             if d_hand_objCenter < d_hand_objEdge:
-            #                 new_action = 'left_middle_grab'
-            #             else:
-            #                 new_action = 'left_edge_grab'
-            
-            #             #Update predicted labels dictionary
-            #             category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
-                        
-            # if first_key == 'approach_right':
-            #     contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
-            #     if found_contour:
-            #         d_hand_objCenter = getDistance(right_hand_center_point_old, obj_center_point)
-            #         d_hand_objEdge = getDistance(right_hand_center_point_old, obj_edge_point)
-            #         if d_hand_objCenter < 100 or d_hand_objEdge < 100:
-            #             if d_hand_objCenter < d_hand_objEdge:
-            #                 new_action = 'right_middle_grab'
-            #             else:
-            #                 new_action = 'right_edge_grab'
-            
-            #             #Update predicted labels dictionary
-            #             category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
-            
-            # contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
+                if first_key == 'approach_left':
+                    contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
+                    if found_contour:
+                        d_hand_objCenter = getDistance(left_hand_center_point_old, obj_center_point)
+                        d_hand_objEdge = getDistance(left_hand_center_point_old, obj_edge_point)
+                        if d_hand_objCenter < 100 or d_hand_objEdge < 100:
+                            if d_hand_objCenter < d_hand_objEdge:
+                                new_action = 'left_middle_grab'
+                            else:
+                                new_action = 'left_edge_grab'
+                            #Update predicted labels dictionary
+                            category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
+                            
+                if first_key == 'approach_right':
+                    contours, obj_center_point, obj_edge_point, found_contour = getBiggestContours(list_contours)
+                    if found_contour:
+                        d_hand_objCenter = getDistance(right_hand_center_point_old, obj_center_point)
+                        d_hand_objEdge = getDistance(right_hand_center_point_old, obj_edge_point)
+                        if d_hand_objCenter < 100 or d_hand_objEdge < 100:
+                            if d_hand_objCenter < d_hand_objEdge:
+                                new_action = 'right_middle_grab'
+                            else:
+                                new_action = 'right_edge_grab'
+                            #Update predicted labels dictionary
+                            category_labels = {new_action: first_value, **{k: v for k,v in category_labels.items() if k!=new_action and k!= first_key}}
 
-            annotated_bgr_image = draw_skeletons(img_rgb, results)#, contours, obj_center_point, obj_edge_point)
-            draw_preds(annotated_bgr_image, category_labels)
+                annotated_bgr_image = draw_skeletons(img_rgb, results, contours, obj_center_point, obj_edge_point)
+                draw_preds(annotated_bgr_image, category_labels)
             
-            # # Calculate a running average on FPS
-            end_time = time.perf_counter()
-            fps = 1.0 / (end_time - start_time)
-            avg_fps = 0.8 * fps + 0.2 * fps
-            #qprint(counter)
-            if counter > 5:
-                annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (avg_fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
-                                1, (255, 0, 0), 2, cv2.LINE_AA)
-            cv2.imshow('Result', annotated_bgr_image)
+                # # Calculate a running average on FPS
+                end_time = time.perf_counter()
+                fps = 1.0 / (end_time - start_time)
+                avg_fps = 0.8 * fps + 0.2 * fps
+                if counter > 5:
+                    annotated_bgr_image = cv2.putText(annotated_bgr_image, "FPS: %.2f" % (avg_fps,), (10, 160), cv2.FONT_HERSHEY_SIMPLEX,
+                                    1, (255, 0, 0), 2, cv2.LINE_AA)
+                cv2.imshow('Result', annotated_bgr_image)
         f_ind += 1
         key = cv2.waitKey(1)
         if key == ord('q'):

@@ -79,7 +79,7 @@ def publish_message():
         zed.retrieve_measure(depth_map, sl.MEASURE.DEPTH)
         #zed.retrieve_image(depth_map, sl.VIEW.DEPTH)
         
-        color = cv2.resize(svo_image.get_data(),(int(1920 / 2), int(1080 / 2)))
+        color = svo_image.get_data()#cv2.resize(svo_image.get_data(),(int(1920), int(1080 / 2)))
 
         #depth_map_msg = create_depth_msg(depth_map)
         
@@ -91,26 +91,19 @@ def publish_message():
         image_depth_msg.data = map.flatten()
 
         # Print debugging information to the terminal
-        rospy.loginfo('publishing video frame')
         rospy.loginfo('publishing depth map')
         
         svo_position = zed.get_svo_position()
         if svo_position >= (nb_frames - 1):  # End of SVO
           zed.set_svo_position(0)
 
-        img_pub.publish(br.cv2_to_imgmsg(color))
-        test_pub.publish(Float32MultiArray(data = map.flatten()))
         depth_pub.publish(image_depth_msg)
-        end = time.perf_counter()
-        print(end-start)
-        start = time.perf_counter()
-        #pcl_pub.publish(pcl_msg)
              
       # Sleep just enough to maintain the desired rate
       rate.sleep()
 
 def create_depth_msg(depth_map):
-  start = time.perf_counter()
+  #start = time.perf_counter()
   map = depth_map.get_data()
   map = np.transpose(map,[1,0])
   

@@ -1,0 +1,14 @@
+<launch>
+  <node
+    pkg="zed_python"
+    type="zed_sender.py"
+    name="Zed_pub"
+    output="screen"
+  />
+  <node
+    pkg="opendr_perception"
+    type="action_recognition_mpzed_node_subscribe.py"
+    name="action_recognition"
+    output="screen"
+  />
+</launch>

@@ -19,7 +19,7 @@ from opendr.perception.skeleton_based_action_recognition import SpatioTemporalGC
 TARGET_FRAMES = 250
 NUM_KEYPOINTS = 46
 
-MODEL_TO_TEST = 'tagcn_37epochs_0.1lr_100subframes_dropafterepoch5060_batch30'
+MODEL_TO_TEST = 'tagcn_50epochs_0.1lr_50subframes_dropafterepoch3040_batch64'
 
 if MODEL_TO_TEST.split('_')[0] == 'tagcn':
     METHOD = 'tagcn'
@@ -43,10 +43,10 @@ action_classifier = SpatioTemporalGCNLearner(device='cuda', dataset_name='custom
 
 print('print_numpoints', action_classifier.num_point)
 
-model_saved_path = Path(__file__).parent / 'models' / 'final_atualizado_fullsize' / str(MODEL_TO_TEST) / 'model'
+model_saved_path = Path(__file__).parent / 'models' / 'depth_map' / str(MODEL_TO_TEST) / 'model'
 action_classifier.load(model_saved_path, MODEL_TO_TEST, verbose=True)
 
-load_data = np.load(str(Path(__file__).parent / 'data' / "final_atualizado_fullsize/val_joints.npy"), allow_pickle=True)
+load_data = np.load(str(Path(__file__).parent / 'data' / "depth_map/val_joints.npy"), allow_pickle=True)
 
 one_sample = load_data[0,...]
 
